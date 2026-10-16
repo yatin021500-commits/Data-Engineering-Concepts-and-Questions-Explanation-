@@ -1,0 +1,17 @@
+The CAP Theorem states that in any distributed data store, you can only simultaneously guarantee two out of three characteristics: Consistency, Availability, and Partition Tolerance.
+Because network failures are inevitable in distributed systems, the theorem essentially dictates that when a network partition occurs, you must choose between consistency and availability.
+
+Technical Breakdown :-
+Consistency: Every read receives the most recent write or an error. If I update a record on node A, a subsequent read from node B must reflect that update.
+
+Availability: Every request receives a non-error response, but there is no guarantee it contains the most recent write. The system stays up, even if it returns slightly stale data.
+Partition Tolerance: The system continues to operate despite network failures dropping or delaying messages between nodes.
+
+How It Affects Database Choice?
+When to choose CP (Consistency over Availability): I choose a CP database when the business cannot tolerate stale data under any circumstances, such as financial transactions, banking ledgers, or inventory management.
+If a network node fails, a CP system will block reads/writes (sacrificing availability) to prevent data corruption.
+
+When to choose AP (Availability over Consistency): I choose an AP database when uptime is the absolute highest priority and the business can tolerate 'eventual consistency'.
+Examples include social media feeds, recommendation engines, or a shopping cart. If a node goes down, the system keeps serving users, even if they see a slightly outdated version of the data for a few milliseconds.
+
+Note :- I look at the PACELC theorem, which extends CAP by stating that even without a network partition, you still have to trade off between latency and consistency.
