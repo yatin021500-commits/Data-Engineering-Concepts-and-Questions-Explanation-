@@ -1,0 +1,20 @@
+The Medallion Architecture is a data design pattern used to logically organize and manage data within a Lakehouse.
+It guarantees a structured, predictable pipeline by progressively improving data quality as it flows through three distinct layers: Bronze, Silver, and Gold."
+
+Technical Breakdown :-
+A. Bronze Layer (Raw): This is the landing zone. We ingest data directly from source systems (APIs, logs, relational databases) in its raw, native state.
+It is typically append-only and serves as our immutable historical archive. If downstream transformations fail, we can always replay from Bronze.
+
+B. Silver Layer (Validated): This is the 'Enterprise View.' Here, we take the Bronze data and apply data quality checks, filtering, deduplication, and schema enforcement.
+The data is normalized and cleaned, making it the perfect playground for Data Scientists and machine learning models.
+
+C. Gold Layer (Curated): This is the 'Business View.' We take the Silver data and apply complex business logic, aggregations, and joins.
+The data is highly refined and usually structured into star schemas. It is strictly optimized for BI tools, dashboards, and executive reporting."
+
+Buisness Impact :- 
+From a business perspective, the Medallion architecture prevents the classic 'data swamp' problem.
+It ensures that different personas get precisely what they need: Data Engineers manage the pipeline, Data Scientists get clean but unaggregated data in Silver, and Business Analysts get highly performant, trustworthy metrics in Gold.
+
+While the concept is straightforward, the real power unlocks when you pair it with modern open table formats like Delta Lake or Apache Iceberg.
+This allows us to enforce strict ACID transactions and schema evolution at every boundary.
+If a bad record hits the pipeline, we can quarantine it between Bronze and Silver without breaking the executive dashboard sitting on the Gold layer.
