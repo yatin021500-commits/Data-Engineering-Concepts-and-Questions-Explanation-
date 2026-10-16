@@ -1,0 +1,20 @@
+At a high level, the difference comes down to the state of the data and the intended use case.
+A data warehouse is a highly structured, curated repository optimized for business intelligence, while a data lake is a flexible, scalable storage pool for raw data optimized for exploration.
+
+Technical Breakdown :-
+A. Schema Breakdown :- 
+A warehouse uses schema-on-write (ETL). We have to rigorously model, clean, and transform the data to fit rigid relational tables before it lands.
+A data lake uses schema-on-read (ELT). We dump raw data—structured, JSON, logs, or even media—into object storage like S3, applying the schema only when we actually query it.
+
+B. Cost and Scalability :-
+Warehouses typically use expensive, specialized storage optimized for fast joins. Lakes use cheap, decoupled object storage, making it cost-effective to store petabytes of data indefinitely.
+
+My decision in terms of buisness context :- 
+In practice, they serve different teams. I would route data to a warehouse if business analysts need sub-second, reliable performance for Tableau dashboards or regulatory reporting.
+I would point my data scientists to the data lake so they have access to the raw, unaggregated features they need to train machine learning models.
+
+What if i need to design a data platform today in 2026? (Important)
+if I were designing a greenfield data platform today, I wouldn't strictly separate them.
+I would lean toward a Data Lakehouse architecture. By using open table formats like Apache Iceberg, Delta Lake, or Hudi on top of our data lake,
+we can bring the ACID transactions, schema enforcement, and BI performance of a warehouse directly to our cheap object storage.
+
