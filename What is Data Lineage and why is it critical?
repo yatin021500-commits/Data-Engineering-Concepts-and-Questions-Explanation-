@@ -1,0 +1,23 @@
+Data Lineage is the complete lifecycle map of a piece of data. It tracks data exactly from its origin, through every transformation, movement, and join it undergoes, all the way to its final destination in a report or dashboard.
+It answers three questions: Where did this come from, what happened to it along the way, and where is it going?
+
+Technical Breakdown :- 
+Table-Level Lineage: This shows macro dependencies. For example, knowing that fact_sales is populated by an airflow DAG that reads from raw_stripe_transactions and dim_customers.
+
+Column-Level Lineage: This is the granular, critical view. It traces a specific metric. If a dashboard shows 'Net Revenue,'
+column-level lineage proves that this field was calculated by taking the gross_amount column from the Stripe API, subtracting the refund_amount from the returns database, and applying a specific tax multiplier in a dbt model."
+
+Without data lineage, a data platform is a black box. It is critical for three main reasons:
+
+Root Cause Analysis (Debugging): When a BI analyst flags that 'Revenue dropped 50% yesterday,' lineage allows me to instantly trace that metric back upstream to find that a specific upstream API changed its date format,
+breaking an intermediate ETL job.
+
+Impact Analysis: If I need to drop a column or change a schema in a raw database, lineage tells me exactly which downstream ML models and executive dashboards will break before I deploy the change.
+
+Compliance and Governance: For frameworks like GDPR or CCPA, if an auditor asks how a specific PII field is used,
+or a user requests the deletion of their data, lineage proves we know exactly where that data lives across the entire ecosystem."
+
+Extra Edge Point :-
+Historically, data lineage was a massive pain point maintained manually in spreadsheets or Confluence.
+Today, I rely on automated lineage generation. By using tools like dbt to parse SQL execution plans, or dedicated metadata platforms like Datahub or Monte Carlo,
+we can generate dynamic, programmatic lineage graphs directly from the code, ensuring the documentation is never out of sync with production.
