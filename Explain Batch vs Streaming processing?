@@ -1,0 +1,21 @@
+The fundamental difference comes down to data boundaries and execution timing. Batch processing handles large, bounded chunks of historical data at scheduled intervals,
+whereas stream processing handles unbounded, continuous flows of data in real-time exactly as it is generated.
+
+Technical Breakdown :-
+Execution Paradigm: Batch pipelines run on a schedule (e.g., an Airflow DAG triggered every night at midnight) to process everything that accumulated over the day.
+Stream pipelines run 24/7 as long-running jobs, instantly reacting to events the millisecond they arrive.
+
+Latency vs. Throughput: Batch is optimized for massive throughput over petabytes of data, where a latency of minutes or hours is acceptable.
+Stream processing optimizes for ultra-low latency, processing micro-batches or individual events in milliseconds.
+
+Tooling: For batch, we rely on engines like standard Apache Spark, Hive, or Snowflake bulk loads.
+For streaming, we use distributed event brokers like Apache Kafka or AWS Kinesis, paired with processing engines like Apache Flink."
+
+Buisness Context :-
+The choice is dictated by the business's 'time-to-value' for the data. I use Batch processing for complex, heavy aggregations where immediate answers aren't critical—like generating end-of-month financial reports or retraining a machine learning model on five years of history.
+I use Stream processing when the value of the data decays in seconds—like blocking a fraudulent credit card transaction before it clears, or calculating dynamic surge pricing for rideshares.
+
+Note :- 
+Historically, companies maintained entirely separate tech stacks for batch and streaming—known as the Lambda architecture—which meant writing and maintaining the same business logic twice.
+Today, if I'm building a modern system, I look to unify them. By using an engine like Apache Flink or Spark Structured Streaming, I can write my transformation SQL or code exactly once, and simply point it at a static historical file for batch,
+or a live Kafka topic for streaming.
