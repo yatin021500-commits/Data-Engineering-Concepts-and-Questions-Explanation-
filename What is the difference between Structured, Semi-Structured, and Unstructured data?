@@ -1,0 +1,2 @@
+Structured data is highly organized (like SQL tables). Semi-structured data has some markers but no rigid schema (like JSON or XML).
+Unstructured data has no internal structure at all (like images, PDFs, or video files).
