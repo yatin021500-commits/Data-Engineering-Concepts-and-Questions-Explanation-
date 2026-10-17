@@ -1,0 +1,34 @@
+Slowly Changing Dimensions (SCDs) dictate how we update our data warehouse when an attribute of a real-world entity changes over time—like a customer moving to a new city,
+or a product changing its pricing tier.
+Since these changes happen occasionally rather than continuously, we need a specific strategy to handle them without breaking historical reporting.
+
+Technical Breakdown:-
+
+SCD Type 1 (Overwrite): We simply update the existing row with the new data.
+If a customer moves from New York to Boston, we overwrite 'New York' with 'Boston'.
+
+Result: The database only shows the current state. All historical context of them ever living in New York is permanently destroyed.
+
+SCD Type 2 (Add a New Row): We never delete or overwrite. 
+Instead, we insert a brand-new row for Boston and expire the old New York row.
+We manage this by adding metadata columns: valid_from, valid_to, and an is_current boolean flag.
+
+Result: The database retains a perfect, auditable timeline of every state that record has ever been in.
+
+SCD Type 3 (Add a New Column): We keep the original row but add a previous_city column alongside the current_city column.
+It only tracks the immediate previous state, not the full history.
+
+Buisness Context :-
+
+Choosing the right type is a critical business decision. I use Type 1 for fields where history genuinely doesn't matter,
+like fixing a typo in a customer's email address.
+But for anything tied to revenue or regional reporting, Type 2 is mandatory.
+If an analyst runs a report for 'Q1 Sales in New York,' and we used Type 1 when the customer moved in Q3, those Q1 sales will incorrectly show up under Boston.
+
+Design Decision :- 
+
+Historically, implementing SCD Type 2 was a nightmare involving complex,
+fragile SQL stored procedures to handle the updates and inserts simultaneously.
+Today, I rely on modern frameworks to handle the heavy lifting. If I'm using dbt,
+I just use dbt snapshots which automatically compiles the Type 2 logic for me. If I'm working directly on a Data Lakehouse,
+I use the MERGE INTO command in Delta Lake or Apache Iceberg, which natively handles row expiration and inserts in a single ACID transaction.
