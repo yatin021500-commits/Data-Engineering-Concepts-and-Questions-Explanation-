@@ -1,0 +1,24 @@
+In data engineering, idempotency means that no matter how many times you run a pipeline,
+the final state of the data remains exactly the same as if it ran successfully just once.
+It is the absolute guarantee that retrying a failed job will never cause data duplication.
+
+Technical Breakdown :-
+Database Operations: Instead of using raw INSERT statements, we use MERGE or UPSERT commands keyed on a unique identifier.
+If the record doesn't exist, it is written; if it already exists from a previous partial run, it is simply overwritten.
+
+Batch Processing: We rely heavily on partition overwrites. If an Airflow DAG calculating yesterday's revenue fails halfway through,
+the retry doesn't append a second set of records.
+It runs an INSERT OVERWRITE on the specific partition for date=yesterday, completely wiping the partial failure and laying down a clean dataset.
+
+Stream Processing: We enforce exactly-once semantics by leveraging idempotent producers (like in Kafka) and
+storing consumer offsets in the same transaction as the processed data."
+
+
+Without idempotency, a midnight pipeline failure is an emergency. It requires an engineer to manually wake up,
+write custom rollback scripts to delete the half-processed rows,
+and carefully restart the job before the business logs in and sees doubled revenue numbers on the executive dashboard.
+With idempotency, an orchestrator can just safely auto-retry.
+
+When I design a data system today, idempotency isn't an afterthought; it is a hard, non-negotiable requirement for every single node in my DAG.
+I pair idempotent operations with functional data engineering principles—treating data transformations as pure functions
+where the same input data and the exact same code version will always yield the exact same output table, making the entire platform self-healing.
