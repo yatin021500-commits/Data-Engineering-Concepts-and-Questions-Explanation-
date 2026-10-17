@@ -1,0 +1,36 @@
+Star and Snowflake schemas are the two most common ways to logically organize a dimensional data model in a data warehouse.
+The core difference boils down to how they handle dimension tables: Star schemas keep dimensions fully denormalized for query speed,
+while Snowflake schemas normalize those dimensions to save storage space and enforce strict data integrity.
+
+Technical breakdown :-
+Both schemas revolve around a central Fact Table (which stores quantitative metrics like 'sales amount') 
+connected to surrounding Dimension Tables (which store descriptive attributes like 'customer', 'product', or 'date')
+
+Star Schema (Denormalized):
+Every dimension connects directly to the central fact table,creating a shape that looks like a star.
+A dimension like dim_product will contain the product name, its category, and its subcategory all in the same row.
+
+Pros: Extremely fast read performance because queries require very few JOINs. The logic is simple and intuitive for BI analysts to understand.
+
+Cons: Storage redundancy. If 1,000 products belong to the 'Electronics' category, the string 'Electronics' is repeated 1,000 times, 
+which can lead to data anomalies if an update isn't handled carefully.
+
+Snowflake Schema (Normalized):
+Dimension tables are broken down further into sub-dimensions, creating a branching 'snowflake' shape.
+The dim_product table connects to the fact table, but it will have a foreign key pointing to a separate dim_subcategory table, which in turn points to a dim_category table.
+
+Pros: Highly efficient storage with zero redundancy (3NF or partial 3NF). It enforces strict data integrity because updating a category name happens in exactly one place.
+
+Cons: Slower read performance. A BI query trying to get sales by category now requires multiple expensive JOINs to traverse the branches back to the fact table.
+It is also much harder for analysts to query directly."
+
+Buisness Context :-
+The choice is a classic trade-off between compute and storage.
+In the 1990s, when disk storage was astronomically expensive, Snowflake schemas were highly popular to save space.
+Today, storage in the cloud (like S3) is incredibly cheap, but compute (like Snowflake credits or BigQuery slots) is expensive.
+Therefore, we generally optimize for fast reads and fewer joins.
+
+Design Decision :-
+When I architect a modern data warehouse today—especially Kimball-style architectures in the Gold layer of a Lakehouse—I almost exclusively default to the Star Schema.
+The minor cost of duplicated storage is vastly outweighed by the massive performance gains and simplicity it provides to downstream BI tools like Looker or Tableau.
+I only normalize into a Snowflake pattern if I am dealing with an extremely complex, slowly changing dimension (SCD) where the redundancy becomes mathematically unmanageable.
