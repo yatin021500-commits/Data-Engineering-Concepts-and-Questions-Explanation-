@@ -1,0 +1,25 @@
+The difference between OLTP and OLAP comes down to how a database is optimized: OLTP is built to run the daily operations of a business by handling millions of fast,
+tiny read/write transactions, while OLAP is built to analyze the business by processing massive, complex queries across historical data.
+
+Technical Breakdown :-
+OLTP (Online Transaction Processing): These are operational databases like PostgreSQL or MySQL.
+They are heavily normalized (3NF) to ensure data integrity and avoid redundancy.
+They write data row-by-row.
+When you buy a coffee, an OLTP system instantly locks the row, deducts your balance, updates the store's ledger, and commits the transaction in milliseconds.
+
+OLAP (Online Analytical Processing): These are data warehouses like Snowflake or BigQuery.
+They are denormalized (Star or Snowflake schemas) and store data in columns (columnar storage) rather than rows.
+When a CEO wants to know 'What was the average coffee sales by region over the last five years?',
+an OLAP system can scan billions of rows in seconds because it only reads the 'sales' and 'region' columns, ignoring everything else."
+
+Buisness Context :- 
+In a standard data architecture, you never mix the two workloads.
+If a data analyst runs a massive aggregation query on the live OLTP database, it will lock the tables and crash the application,
+preventing customers from buying things. Instead, we use ETL/ELT pipelines to continuously extract data from the operational OLTP databases
+and load it into the analytical OLAP data warehouse where analysts can query it safely.
+
+Design Decision alligned with current tech :-
+While the separation of OLTP and OLAP has been the gold standard for decades, I'm closely watching the rise 
+of HTAP (Hybrid Transactional/Analytical Processing) databases like TiDB or AlloyDB.
+By leveraging intelligent routing and keeping row-based and columnar replicas synced in real-time under the hood,
+HTAP systems are attempting to let us run real-time analytics directly on operational data without needing complex, fragile ETL pipelines in between.
