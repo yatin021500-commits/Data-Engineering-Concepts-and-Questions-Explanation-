@@ -1,0 +1,24 @@
+A Single Point of Failure (SPOF) is any piece of hardware, software, or routing infrastructure in a data system that, if it goes down, brings the entire pipeline or application down with it.
+It is the architectural bottleneck where zero redundancy exists.
+
+Technical Breakdown :-
+
+Compute: If you have an Apache Spark or Hadoop cluster relying on a single master node to manage all the worker nodes, that master node is a SPOF.
+If it crashes, no jobs get scheduled, even if you have 100 perfectly healthy worker nodes waiting for tasks.
+
+Storage: A classic example is running a monolithic relational database on a single EC2 instance without setting up a read replica or a failover cluster.
+If that disk corrupts or the instance terminates, the data is entirely inaccessible.
+
+Orchestration: Running your Airflow scheduler or Kafka broker on a single machine without High Availability (HA) configured.
+If that one server loses network connectivity, the entire nervous system of your data platform halts."
+
+Buisness Context :- 
+From a business perspective, a SPOF is a ticking time bomb for SLA breaches and data loss.
+If a SPOF fails, it immediately impacts the bottom line—whether that means an executive dashboard goes dark during a critical meeting,
+or a real-time fraud detection model stops receiving streaming events, letting bad transactions through.
+
+Designing decision :-
+When I architect a modern data platform, my goal is to eliminate SPOFs entirely by designing for High Availability (HA) and Fault Tolerance.
+I do this by deploying stateless microservices behind auto-scaling load balancers,
+using multi-AZ (Availability Zone) distributed storage like S3 or DynamoDB,
+and relying on distributed consensus protocols like ZooKeeper or Raft so that if any single node fails, a replica instantly and seamlessly takes over the workload.
