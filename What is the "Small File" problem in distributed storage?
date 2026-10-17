@@ -1,0 +1,24 @@
+The 'Small File Problem' is a major anti-pattern in distributed storage systems like HDFS or AWS S3.
+It occurs when you store data as millions of tiny files (a few kilobytes each) rather than grouping it into fewer,
+optimally sized blocks (typically 128MB to 1GB).
+
+Technical Breakdown :- 
+
+Metadata Overhead: Distributed file systems separate data from metadata.In HDFS, the NameNode stores the metadata for every single file in its RAM.
+If you have 10 million 1KB files, you will exhaust the NameNode's memory and crash the cluster long before you run out of actual disk space.
+On cloud storage like S3, millions of files mean millions of API calls just to list the directory.
+
+I/O Inefficiency: Analytics engines like Spark or Presto are built for sequential I/O—they want to open a large file and stream the data.
+If they have to process 10,000 tiny files, the system spends more time opening connections,
+reading the file header, and closing the connection than it does actually reading the data payload.
+
+Buisness Context :- 
+From a business standpoint, this problem causes cloud bills to skyrocket. Cloud providers charge per PUT and GET request.
+Ingesting a streaming firehose as millions of tiny JSON files will run up a massive API bill,
+while simultaneously causing end-user BI dashboards to time out because the query engine is choking on the metadata listing.
+
+Design Decision :-
+To fix this in a modern pipeline, I implement automated compaction. If we are streaming data in real-time, I'll let the tiny files land in a raw zone temporarily.
+Then, I schedule a downstream batch job (or use a continuous maintenance process) to read those small files and rewrite them as large, compressed, columnar files like Parquet.
+Even better, if I'm using a table format like Apache Iceberg or Delta Lake, I just run their native OPTIMIZE commands to handle the compaction automatically under the hood.
+
