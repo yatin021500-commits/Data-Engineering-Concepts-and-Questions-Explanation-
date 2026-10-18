@@ -1,0 +1,29 @@
+Optimizing a slow SQL query isn't about guessing which index to add; it is a systematic debugging process.
+It always starts with reading the execution plan to understand exactly how the database optimizer decided to physically retrieve the data.
+
+Technical Breakdown :-
+
+Analyze the Execution Plan (EXPLAIN): I look for the most expensive operations. A 'Full Table Scan' on a billion-row table is a red flag.
+I want to see 'Index Seeks' (OLTP) or effective 'Partition Pruning' (OLAP).
+
+Filter Early and Often: I ensure WHERE clauses are applied before any JOINs or GROUP BYs.
+Moving a filter from a HAVING clause to a WHERE clause drastically reduces the amount of data passing through the pipeline.
+
+Examine the Joins: I look for accidental Cartesian products (missing join conditions) or nested loop joins on massive tables.
+I try to replace OR logic in joins with UNION ALL, which databases optimize much better.
+
+Select Only What's Needed: I aggressively eliminate SELECT *. In columnar data warehouses like Snowflake, reading 5 columns instead of 50 cuts the I/O cost by 90%.
+
+Business Context :-
+
+In data engineering, a slow query isn't just an annoyance—it's a direct financial cost.
+In cloud warehouses where you pay per byte scanned or compute credit used, an unoptimized query running hourly can burn tens of thousands of dollars a year.
+Furthermore, it causes pipeline bottlenecks, violating SLAs and delaying executive dashboards.
+
+Design Decision :-
+
+If I've optimized the SQL perfectly and it's still slow in a distributed system like Spark or BigQuery, I stop looking at the code and start looking at the data architecture.
+I'll check for data skew (where 80% of the processing gets stuck on one worker node).
+If a large table is joining to a tiny dimension table, I'll force a Broadcast Join to eliminate network shuffling.
+And if it's a massive analytical query that doesn't need real-time freshness, I won't run the query at all—I'll pre-compute the result overnight using an Incremental dbt model or a Materialized View.
+
