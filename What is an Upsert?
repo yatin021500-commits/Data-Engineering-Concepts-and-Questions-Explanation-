@@ -1,0 +1,25 @@
+An 'Upsert' is a portmanteau of 'Update' and 'Insert'. It is a single, 
+atomic database operation that checks if a record already exists based on a unique identifier: if the record exists,
+the system updates it with the new values; if it does not exist,
+the system inserts it as a brand-new row.
+
+Technical Breakdown :-
+If we just use a blind INSERT, we risk throwing primary key violation errors or creating duplicate rows if the data already exists.
+
+If we just use a blind UPDATE, we do nothing if the row is missing.
+An upsert handles both gracefully in one pass. In standard SQL, this is typically implemented using the MERGE INTO statement.
+Depending on the dialect, you might also see PostgreSQL's INSERT ... ON CONFLICT DO UPDATE or MySQL's REPLACE INTO.
+
+Buisness Context :-
+
+In a data pipeline, upserts are the cornerstone of idempotency and data synchronization.
+If an upstream operational system sends us a nightly batch of 100,000 user records,
+some might be new signups and others might be existing users who updated their phone numbers. 
+An upsert allows us to process that entire batch safely, ensuring our data warehouse perfectly mirrors the source system without creating duplicate profiles.
+
+Design Decision :-
+
+In traditional Hadoop ecosystems, upserts were notoriously difficult because HDFS is append-only—you had to rewrite entire massive partitions just to update a few rows.
+Today, in a modern Lakehouse architecture, I use open table formats like Apache Iceberg, Delta Lake, or Apache Hudi.
+They natively support ACID-compliant MERGE INTO operations at the file level,
+allowing me to upsert millions of records into a petabyte-scale data lake efficiently using Spark or dbt, without doing a full table scan.
