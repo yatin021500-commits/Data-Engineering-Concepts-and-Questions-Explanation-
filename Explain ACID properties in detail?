@@ -1,0 +1,37 @@
+ACID is an acronym representing the four fundamental properties—Atomicity, Consistency, Isolation, and Durability—that a database system
+must guarantee to ensure transactions are processed reliably. 
+It is the gold standard that ensures your data remains valid and uncorrupted, 
+even in the face of power failures, network crashes, or thousands of concurrent users.
+
+Technical Breakdown :-
+
+Atomicity ('All or Nothing'): A transaction is treated as a single, indivisible unit. If a transaction consists of five steps,
+and step four fails, the database automatically rolls back the first three steps. Example: In a bank transfer,
+if I deduct $100 from Account A, but the system crashes before crediting Account B, Atomicity ensures the $100 is returned to Account A.
+
+Consistency ('Valid State to Valid State'): A transaction can only bring the database from one valid state to another.
+It enforces all predefined rules, such as constraints, cascades, and triggers. 
+Example: If a database rule states an account balance cannot fall below zero, a transaction attempting to withdraw $200 from an account with $100 will fail
+and roll back to maintain consistency.
+
+Isolation ('No Interference'): Concurrent transactions occur entirely independently of one another.
+The intermediate state of a transaction is invisible to other transactions.
+Example: If two people try to withdraw the last $100 from a joint account at the exact same millisecond, Isolation ensures they are sequenced so only one succeeds,
+preventing a 'dirty read'.
+
+Durability ('Permanent'): Once a transaction has been successfully committed, it will survive permanently, even if the database server catches fire a millisecond later.
+The system achieves this by writing the transaction to a non-volatile transaction log before acknowledging the commit to the user.
+
+Buisness Context :- 
+Choosing a database with strong ACID guarantees is critical for operational (OLTP) systems like financial ledgers, inventory management,
+or e-commerce checkouts. If you sacrifice ACID properties for raw speed or availability—which many NoSQL databases do by
+defaulting to 'eventual consistency'—you risk overselling inventory or losing financial records during a network partition.
+
+Design Decision :-
+
+Historically, ACID properties were exclusively the domain of relational operational databases like PostgreSQL or MySQL.
+Data Lakes were the 'wild west' where partial failures left dirty data behind.
+Today, as a data engineer, I leverage open table formats like Apache Iceberg, Delta Lake, or Apache Hudi.
+These formats bring full ACID transactional guarantees directly to the Data Lake (forming a Lakehouse),
+which means I can safely have Spark clusters writing massive batches of data at the exact same time my BI analysts are querying
+it without any risk of them seeing corrupted, half-written data.
