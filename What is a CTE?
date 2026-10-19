@@ -1,0 +1,23 @@
+A Common Table Expression, or CTE, is essentially a temporary, named result set that you define at the very beginning of a SQL query using the WITH clause.
+It acts exactly like a temporary view that exists only for the duration of that specific query execution.
+
+Technical Breakdown :-
+Readability & Flow: Instead of burying a complex subquery deep inside a FROM or JOIN clause where you have to read the SQL inside-out,
+a CTE lets you read the logic top-to-bottom. You define WITH Step_1 AS (...), then Step_2 AS (...), and finally SELECT * FROM Step_2.
+
+Reusability: If you need to join the same aggregated sub-dataset twice in the same main query,
+a subquery forces you to write and compute that logic twice. A CTE lets you define it once at the top, and refer to it multiple times below.
+
+Recursion: CTEs have a unique superpower called Recursive CTEs. By referencing itself,
+a recursive CTE can traverse hierarchical data—like finding all the direct and indirect reports of a CEO in an employee table—which is practically impossible with standard subqueries.
+
+Business Context :-
+
+In data engineering, our SQL scripts often grow to hundreds of lines long, powering critical dbt models or BI dashboards. If an analyst inherits a massive query written entirely with nested subqueries, debugging it is a nightmare.
+CTEs enforce modular, declarative programming within SQL, radically reducing maintenance time and cognitive load for the team.
+
+Extra Edge:-
+I have to watch out for performance traps. While CTEs make code cleaner, they are not indexed.
+In engines like PostgreSQL (prior to version 12), CTEs acted as optimization fences, meaning the query planner couldn't push filters down into them, causing massive full-table scans in memory.
+Today, modern engines like Snowflake or BigQuery are smart enough to inline and optimize CTEs just like subqueries, but if I'm reusing a massively heavy CTE 5 times in one query,
+I might refactor it into an actual temporary table to avoid recomputing it repeatedly.
