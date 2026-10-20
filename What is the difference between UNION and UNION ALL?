@@ -1,0 +1,27 @@
+Both UNION and UNION ALL are set operators 
+used to stack the results of two or more SELECT queries vertically.
+The fundamental difference is how they handle identical rows: UNION ALL simply appends everything together, 
+keeping duplicates, whereas UNION actively removes all duplicate rows before returning the final result.
+
+Technical Breakdown :-
+UNION ALL (The Append): The engine takes the output of Query A and sticks it directly on top of the output of Query B.
+It's a fast, blind concatenation. It requires almost zero processing overhead.
+
+UNION (The Deduplicator): The engine takes Query A and Query B, appends them, and then must perform an implicit DISTINCT operation across the entire combined dataset.
+To do this, the engine usually has to sort all the rows or build a massive hash table in memory to identify and drop the duplicates.
+This adds significant computational cost and memory overhead.
+
+Business Context :-
+
+The choice depends on the data context. 
+If you are combining a mailing list of 'recent buyers' and 'newsletter subscribers' to send a promo code,
+you must use UNION so a customer in both lists doesn't receive two emails.
+But if you are stacking '2022 Sales' and '2023 Sales', those are mutually exclusive by definition.
+Using UNION ALL gets you the exact same result but finishes in a fraction of the time
+
+Design Decision :-
+
+In modern data engineering across distributed systems like Snowflake, BigQuery, or Apache Spark, using a standard UNION when you don't absolutely need it is a cardinal sin.
+Deduplicating massive datasets forces the cluster into an expensive network 'shuffle', moving terabytes of data between worker nodes just to check for duplicates.
+My default standard is to always write UNION ALL.
+I only use UNION if I have proven that duplicates exist and that the business logic explicitly requires them to be destroyed.
