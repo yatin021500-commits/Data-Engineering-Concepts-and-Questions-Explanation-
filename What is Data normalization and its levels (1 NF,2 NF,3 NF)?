@@ -1,0 +1,32 @@
+Data Normalization is the process of structuring a relational database to reduce data redundancy and improve data integrity. 
+It's essentially a set of rules—called 'Normal Forms'—that dictate how we divide large, messy tables into smaller,
+linked tables to ensure that every piece of information is stored in exactly one place.
+
+Technical Breakdown :-
+
+First Normal Form (1NF): The rule of atomicity. Every column must contain a single, indivisible value, and each record must be unique.
+If a 'Customer' table has a 'Phone_Numbers' column containing 555-1234, 555-9876 in a single cell, it violates 1NF. We must split those into separate rows.
+
+Second Normal Form (2NF): The rule of full dependency. The table must be in 1NF, and all non-key columns must depend on the entire primary key.
+This usually applies to tables with composite keys. For example, in an Order_Details table with a composite key of (OrderID, ProductID),
+having a ProductName column violates 2NF because ProductName only depends on ProductID, not OrderID.
+We extract the product details into a separate Products table.
+
+Third Normal Form (3NF): The rule of no transitive dependency. The table must be in 2NF, and non-key columns cannot depend on other non-key columns.
+If a Customer table has ZipCode and City, City technically depends on ZipCode, not the Customer ID.
+To achieve 3NF, we move ZipCode and City into a separate Locations table.
+
+
+
+Buisness Context :- 
+The business value of normalization is preventing update anomalies.
+If a company changes its name from 'Apple' to 'Apple Inc.', and that data isn't normalized (it's repeated a million times across sales records),
+you have to update a million rows. If it's in 3NF, you update exactly one row in the Company table, and the change instantly cascades everywhere.
+
+
+Design Decision :- 
+While 3NF is the absolute holy grail for operational databases (OLTP) where write-speed and consistency are paramount,
+as a data engineer building analytical data warehouses (OLAP),
+I actually de-normalize data intentionally. If I'm building a Kimball Star Schema in Snowflake,
+I'll deliberately violate 3NF and merge that Locations table right back into my Dim_Customer table.
+Storage is cheap today, but JOIN operations on petabyte-scale data are incredibly expensive. Denormalizing speeds up our BI dashboards exponentially.
