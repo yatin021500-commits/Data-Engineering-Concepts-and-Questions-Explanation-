@@ -1,0 +1,28 @@
+Apache Spark is a unified, distributed analytics engine designed for large-scale data processing.
+The fundamental reason it replaced Hadoop MapReduce as the industry standard comes down to one core architectural decision: Spark processes data in RAM (in-memory),
+whereas MapReduce constantly reads and writes intermediate data to physical disk.
+
+Technical Breakdown :-
+In-Memory Processing vs. Disk I/O: In MapReduce, every single map and reduce operation requires writing the intermediate results back to the hard drive (HDFS) and reading them again for the next step.
+Spark keeps the data in memory across multiple transformations, effectively eliminating the massive latency of disk I/O.
+
+The DAG (Directed Acyclic Graph): MapReduce forces you into a rigid, two-step paradigm: Map, then Reduce.
+If you have a complex job, you have to chain multiple jobs together. Spark builds a DAG of your entire logical pipeline,
+optimizes it under the hood (using the Catalyst Optimizer), and executes it dynamically.
+
+API Usability: Writing MapReduce required hundreds of lines of verbose Java code.
+Spark provides highly expressive APIs in Python (PySpark), Scala, and standard SQL.
+
+Buisness Context :-
+From a business perspective, Spark is about 'time-to-insight'.
+For simple, single-pass batch jobs, Spark is about 10x faster than MapReduce.
+But for iterative workloads—like training a machine learning model where the algorithm has to pass over the exact same dataset hundreds of times—Spark can be 100x faster,
+taking processes from days down to minutes.
+
+Design Decision :-
+While Spark definitively won the compute war over MapReduce,
+the way we use it has evolved. I rarely stand up raw Apache Spark clusters on EC2 instances anymore.
+Instead, I rely on managed, serverless platforms like Databricks or AWS EMR.
+More importantly, we've fully decoupled compute from storage.
+MapReduce was tightly coupled to HDFS storage on the same physical machines; today,
+we spin up ephemeral Spark compute clusters that process data sitting cheaply and independently in cloud object storage like S3.
