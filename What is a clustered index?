@@ -1,0 +1,26 @@
+A clustered index doesn't just point to your data; it is your data. 
+It dictates the actual physical sorting order of the rows on the disk.
+Because a table's rows can only be physically sorted in one sequential order, you can only have exactly one clustered index per table.
+
+Technical Breakdown :-
+Non-Clustered Index: Think of this like the index at the back of a textbook.
+The index is sorted alphabetically, but it only contains pointers (page numbers) to where the actual information lives.
+Searching requires two steps: reading the index, then jumping to the specific data page.
+
+Clustered Index: Think of this like a dictionary. 
+The data itself is physically stored in alphabetical order.
+In database terms, the clustered index forms a B-Tree where the 'leaf nodes' contain the actual data rows themselves, not just pointers.
+
+Note :- When you define a Primary Key in most relational databases (like PostgreSQL or SQL Server), the engine automatically creates a clustered index on that key by default.
+
+Business Context :-
+
+Clustered indexes are wildly powerful for range queries.
+If a business analyst frequently queries a sales table for date BETWEEN '2023-01-01' AND '2023-01-31', and the table has a clustered index on the date column,
+the disk head finds the start date and simply reads sequentially. There is no jumping around the disk, making the I/O lightning fast.
+
+Design Decision :- 
+In modern cloud data warehouses like Snowflake or BigQuery, traditional B-Tree clustered indexes don't exist.
+Instead, we use concepts like 'Clustering Keys' or 'Partitioning'. While the underlying mechanism shifts to columnar micro-partitions,
+the data engineering principle remains identical: we intentionally physically co-locate data based on how downstream analysts filter it (usually by time or tenant ID) 
+to maximize 'partition pruning' and minimize compute costs.
