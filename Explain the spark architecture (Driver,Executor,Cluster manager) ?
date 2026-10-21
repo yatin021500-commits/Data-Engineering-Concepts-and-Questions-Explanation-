@@ -1,0 +1,30 @@
+Think of Spark’s architecture like a massive construction project.
+You have the Driver (the general contractor) who reads the blueprint and assigns the work,
+the Cluster Manager (the resource agency) who provides the raw labor and machinery,
+and the Executors (the workers) who actually swing the hammers and do the heavy lifting.
+
+Technical Breakdown :-
+
+The Driver (The Brain): This is where your main() method runs. It takes your PySpark or SQL code, translates it into a logical Directed Acyclic Graph (DAG),
+and breaks that DAG down into physical, distributable 'Tasks'.
+
+The Cluster Manager (The Resource Negotiator): The Driver can't just spin up machines itself.
+It asks the Cluster Manager—like YARN, Kubernetes, or Spark Standalone—for resources.
+The Cluster Manager allocates the necessary RAM and CPU cores across the worker nodes.
+
+The Executors (The Brawn): Once resources are granted, the Driver sends the Tasks directly to the Executors.
+Executors live on the worker nodes, crunch the data, store intermediate results in their local memory (RAM), and eventually report the final status
+or return data back to the Driver.
+
+Buisness Context :- 
+
+This decoupled architecture gives businesses two massive advantages: extreme horizontal scalability and fault tolerance.
+If an Executor node suddenly dies due to a hardware failure, the job doesn't fail.
+The Driver simply detects the lost heartbeat, requests a new Executor from the Cluster Manager, and re-assigns the lost tasks seamlessly.
+
+Design Decision :-
+
+Historically, everyone ran Spark on top of Hadoop YARN. But as a modern data engineer,
+I am pushing for Kubernetes (K8s) as the cluster manager.
+By containerizing Spark jobs with Docker and letting K8s manage the resources, we stop paying for idle monolithic Hadoop clusters.
+We can spin up ephemeral, perfectly isolated Spark clusters on demand, and tear them down the second the pipeline finishes, radically optimizing our cloud compute costs.
