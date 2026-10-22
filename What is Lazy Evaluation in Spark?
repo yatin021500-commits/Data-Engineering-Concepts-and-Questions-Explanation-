@@ -1,0 +1,27 @@
+Lazy evaluation means that when you tell Apache Spark to manipulate data, it doesn't actually do the work right then. 
+Instead, it simply takes notes, building a logical blueprint of your instructions, and refuses to process a single byte of data until you explicitly demand a final result.
+
+Technical Breakdown :-
+
+Transformations (Lazy): Methods like .filter(), .join(), or .withColumn() are lazy.
+When you write them, Spark just adds a node to its internal Directed Acyclic Graph (DAG) representing the lineage of the data. The cluster sits completely idle.
+
+Actions (Eager): Methods like .count(), .collect(), or .write() trigger execution. 
+When an Action is called, Spark hands the entire accumulated DAG to the Catalyst Optimizer.
+Catalyst rewrites the blueprint for maximum efficiency, determines the physical execution plan, and finally spins up the worker nodes to crunch the numbers.
+
+Buisness Context :-
+
+This design saves an enormous amount of compute time and money. If a data analyst writes a script to read a 1-terabyte dataset, applies 15 complex transformations, but ends the script
+with .limit(10).show(), lazy evaluation allows Catalyst to look ahead.
+It realizes it only needs 10 rows, optimizes the physical plan to only read a tiny fraction of the raw data, and skips terabytes of unnecessary I/O.
+
+Design Decision :-
+
+While lazy evaluation is a performance superpower, it makes debugging notoriously difficult.
+A missing column error in a .select() transformation won't crash the program on that line;
+it will crash 20 lines later when you finally call .write(). 
+To mitigate this in complex pipelines, I strategically inject .cache() or .checkpoint() commands. 
+These force Spark to eagerly evaluate the DAG up to that point and save the state, deliberately breaking the lineage to isolate bugs and prevent Spark from recomputing
+identical data structures during iterative machine learning workloads.
+
