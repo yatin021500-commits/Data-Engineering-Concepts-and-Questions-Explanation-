@@ -1,0 +1,26 @@
+Older systems like Hadoop MapReduce achieved fault tolerance through brute force: they copied every piece of data to three different hard drives. 
+Apache Spark is much more elegant. Instead of replicating the data itself, Spark remembers the exact recipe used to create the data,
+allowing it to instantly reconstruct anything that gets lost.
+
+Technical Breakdown :-
+
+Immutability: Once an RDD or DataFrame is created in memory, it can never be changed. Transformations only create new, child datasets.
+
+The Lineage Graph: Spark records every transformation (filter, map, join) applied to the base data in a Directed Acyclic Graph.
+If a worker node suddenly catches fire and loses its slice of the data (say, Partition 4) from RAM, the Driver doesn't crash the job.
+It simply consults the Lineage Graph, finds the exact sequence of transformations required to build Partition 4, goes back to the original source data on disk,
+and assigns a surviving worker node to recompute just that missing slice.
+
+Business Context :-
+
+By eliminating the need to constantly write replicated data to physical disk over the network, Spark achieves its signature in-memory speed.
+This design allows businesses to run massive data pipelines on cheap, ephemeral cloud infrastructure (like AWS Spot Instances). 
+If a cheap node is preempted and dies mid-job, the pipeline transparently heals itself without human intervention.
+
+Design Decision :-
+
+However, this 'recomputation' superpower has an Achilles' heel: incredibly long lineages. If an iterative machine learning pipeline has a lineage of 500 transformations,
+losing a node at step 499 means Spark has to recompute everything from step 1,
+which could take hours. As a data engineer, I proactively break these massive DAGs by explicitly calling .checkpoint() or
+writing the intermediate state to a Delta Lake table. 
+This physically writes the data to reliable storage (like S3), truncating the DAG and establishing a safe 'save point' for rapid recovery.
