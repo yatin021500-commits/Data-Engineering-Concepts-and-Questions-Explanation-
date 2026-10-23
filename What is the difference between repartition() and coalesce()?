@@ -1,0 +1,27 @@
+Both repartition() and coalesce() are used to change the number of partitions in a Spark DataFrame, but they come with a drastically different performance cost.
+repartition() is the sledgehammer that does a full network shuffle to reorganize data perfectly, while coalesce() 
+is the scalpel that only combines existing partitions locally to avoid a shuffle.
+
+Technical Breakdown :-
+
+repartition(n): Can increase or decrease the number of partitions.
+It triggers a massive wide transformation (a shuffle), pulling data from across the entire cluster.
+The advantage is that it distributes data perfectly evenly across all nodes, preventing skew.
+
+coalesce(n): Can only decrease the number of partitions. It optimizes by moving data as little as possible,
+effectively merging adjacent partitions on the exact same worker node. 
+Because it skips the cross-network shuffle, it is lightning-fast, but it can leave you with highly skewed, uneven partition sizes.
+
+Business Context :-
+
+The primary reason we use either of these is to control output file sizes. If a pipeline writes 10,000 tiny 1KB files to an S3 bucket,
+downstream BI tools will choke (the 'small file problem'). We use coalesce() right before writing to quickly condense those into a few optimal 128MB files 
+without paying the heavy compute cost of a full network shuffle.
+
+Design Decision :-
+
+While coalesce() is faster, it can be a deadly trap. If you call .coalesce(1) on a 500GB dataset, you force all that data onto a single worker node,
+instantly causing an Out-Of-Memory (OOM) crash. As a data engineer writing data out to a Lakehouse format like Apache Iceberg or Delta Lake,
+I actually prefer repartition(col) based on the partition key. 
+It forces an expensive shuffle, yes, but it perfectly aligns the data in memory before writing, 
+resulting in pristine, perfectly sorted storage files that make downstream analytical reads exponentially faster.
