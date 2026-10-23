@@ -1,0 +1,26 @@
+Data skew occurs when your data is unevenly distributed across the partitions in your cluster. 
+Because a single Spark task processes exactly one partition, skew means one worker node gets crushed with 99% of the data
+while the other nodes finish instantly and sit idle.
+
+Technical Breakdown :- 
+
+The Symptom: If you look at the Spark UI, you'll see a stage with 200 tasks. 199 tasks finish in 3 seconds,
+but the last task takes 45 minutes, or crashes completely with an Out Of Memory (OOM) error.
+
+The Cause: Imagine joining a global sales table on country_code. If 90% of your sales are in the 'US',
+Spark hashes the key 'US' and sends all 90% of those records to a single partition on a single node.
+The cluster's parallelism is completely destroyed.
+
+Buisness Context :- 
+
+Data skew is the silent killer of cloud budgets and data SLAs. When one node is struggling for hours,
+you are still paying the hourly compute rate for the other 49 nodes in the cluster that are doing absolutely nothing.
+Fixing skew transforms an unreliable, expensive 2-hour pipeline into a stable 5-minute job
+
+Design Decision :-
+
+Historically, we fixed this manually using Salting. We would append a random number (the 'salt') to the skewed key (e.g., changing 'US' to 'US_1', 'US_2', up to 'US_10').
+This artificially broke the massive partition into 10 smaller chunks that distributed evenly across the cluster.
+We would then replicate the join table 10 times, perform the join, and strip the salt off.
+Today, however, if I am running Spark 3.0 or later, I just ensure Adaptive Query Execution (AQE) is turned on (spark.sql.adaptive.enabled = true).
+AQE dynamically detects skew at runtime and automatically splits the skewed partitions for me, completely eliminating the need for manual salting code.
