@@ -1,0 +1,27 @@
+Speculative Execution is Apache Spark’s automatic contingency plan for dealing with 'straggler' tasks. If 99% of a stage finishes instantly, 
+but one single task is crawling at a snail's pace, Spark doesn't wait to figure out why—it simply spawns a duplicate copy of that slow task on a different,
+healthy worker node and lets them race.
+
+Technical Breakdown :- Under the hood, Spark constantly monitors the execution time of tasks within a stage. 
+If a task's runtime significantly exceeds the median time of its peers, the engine assumes there is a localized hardware issue—like a degraded disk,
+a noisy neighbor on a shared cloud instance, or a network hiccup.
+
+The Race: Spark speculatively launches a clone of the slow task elsewhere in the cluster.
+
+The Resolution: Whichever task finishes first (the original or the clone) has its results accepted by the Driver.
+
+The Cleanup: Spark immediately sends a kill signal to the loser, instantly freeing up those compute resources.
+
+Buisness Context :- 
+From a business perspective, this is an automatic insurance policy for strict SLAs. 
+In massive cloud environments using thousands of ephemeral VMs, hardware degradation is inevitable. Without speculative execution,
+a 15-minute pipeline could stall for an extra hour just because one worker node has a faulty CPU.
+Speculative execution ensures your job runtimes remain highly predictable.
+
+Design Decision :- 
+
+However, as a senior engineer, I am extremely cautious with speculative execution (configured via spark.speculation = true). 
+It is incredibly dangerous if your job is writing data to an external, non-idempotent system like a standard relational database or an older Hadoop file system.
+If both the original task and the clone start inserting rows before one is killed, you will silently corrupt your target table with duplicate data.
+I only enable it if my pipeline is entirely read-only, or if I am writing to a transactional Lakehouse format like Delta Lake or Apache Iceberg,
+which natively guarantees atomic commits through optimistic concurrency control.
