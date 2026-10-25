@@ -1,0 +1,25 @@
+Both cache() and persist() are optimization techniques used to save an intermediate DataFrame so it doesn't have to be recomputed. 
+The fundamental difference is control: cache() is just a lazy shortcut with hardcoded defaults, whereas persist() gives you the steering wheel to define exactly 
+how and where that data is stored across the cluster.
+
+Technical Breakdown :- Under the hood, calling df.cache() is literally just calling df.persist(StorageLevel.MEMORY_AND_DISK) for DataFrames.
+
+The Default (cache()): Spark attempts to store the data in RAM. If the dataset is too large, the overflow automatically 'spills' to the physical disk of the worker nodes.
+
+The Customization (persist()): With persist(), you can pass specific storage levels.
+If you want to aggressively protect your disk, you can use MEMORY_ONLY.
+If you want to compress the data to fit more into RAM, you can use MEMORY_ONLY_SER, which stores the data as serialized byte arrays, 
+trading a little extra CPU time for a massive reduction in memory footprint.
+
+Buisness Context :-
+We use these commands whenever a pipeline 'branches'—meaning a single, expensive transformation (like a 30-minute join) generates a DataFrame
+that is then used multiple times downstream, such as writing to a delta table and updating a reporting dashboard.
+Caching ensures the cluster only pays that 30-minute compute tax once, drastically reducing cloud costs and pipeline duration.
+
+Design Decision :-
+
+There are two massive anti-patterns I hunt for in code reviews regarding caching.
+First, juniors often forget to call df.unpersist() when they are done with the data, leaving cluster RAM bloated and suffocating downstream tasks.
+Second, over-caching. Because disk I/O and serialization are expensive,
+if your source data is sitting in a highly optimized columnar format like Parquet or Iceberg,
+it is frequently much faster to just let Spark recompute the DAG from scratch rather than forcing a heavy persist() to disk.
