@@ -1,0 +1,24 @@
+If cache() is like pausing a video game, checkpoint() is creating a permanent hard save. 
+It physically writes your DataFrame to reliable distributed storage—like HDFS or Amazon S3—and completely severs the logical lineage graph, 
+whereas caching simply holds the data in temporary memory while keeping the lineage intact.
+
+Technical Breakdown :-
+
+With cache(): Spark keeps the Directed Acyclic Graph (DAG) history. 
+If an Executor node dies and the cached data in RAM is lost,
+Spark says, 'No problem, I know the recipe,' and recomputes the lost partition from the very beginning of the pipeline.
+
+With checkpoint(): Spark writes the data to persistent disk and deletes the entire DAG history up to that point. 
+If a node dies, Spark doesn't recompute anything. It just goes directly to S3 or HDFS, reads the checkpointed file, and resumes.
+It trades the cost of a heavy disk write for absolute fault tolerance.
+
+Business Context :- 
+We use checkpoints primarily in massive iterative algorithms, like training machine learning models or traversing social network graphs (GraphX). 
+In these workloads, the DAG can become hundreds of steps long. Without checkpointing, the lineage gets so massive that the Driver node actually 
+crashes with a StackOverflowError just trying to memorize the execution plan.
+
+Design Decision :- 
+In modern batch data engineering, I rarely use the native df.checkpoint() command anymore. Writing an intermediate DataFrame out to a Delta Lake or Apache Iceberg table
+accomplishes the exact same DAG-truncation, but adds ACID transactions, schema enforcement, and time travel. 
+However, in Spark Structured Streaming, checkpointing is absolutely mandatory. 
+It is the core mechanism that tracks read offsets and stateful aggregations, ensuring 'exactly-once' processing guarantees if the streaming cluster goes down and restarts.
