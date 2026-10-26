@@ -1,0 +1,23 @@
+Out of Memory (OOM) errors are the most feared exceptions in Apache Spark. But to fix one, you first have to ask the most critical 
+question: did the OOM happen on the Driver node, or on an Executor node? 
+They are two completely different problems with entirely different solutions.
+
+Technical Breakdown :-
+
+Driver OOMs: This happens when you bring too much data back to the master node. The two most common culprits are calling df.collect() on a billion-row DataFrame,
+or forcing a Broadcast Join on a table that is secretly 5GB. The Fix: Swap .collect() for .take(100) or .show(), and disable auto-broadcasting for oversized dimension tables.
+
+Executor OOMs: This happens when worker nodes run out of RAM while processing a partition. The main culprits are Data Skew (one node gets 99% of the data), partitions being 
+too large (trying to fit a 10GB chunk into 2GB of RAM), or aggressive caching. The Fix: Enable Adaptive Query Execution (AQE) 
+to handle skew, aggressively increase the number of partitions (df.repartition()) so each chunk is smaller, or clear out old cached data using df.unpersist().
+
+Business Context :- 
+In production, OOMs rarely happen on day one. They happen on day 200, when organic business growth pushes a table's size past a hidden tipping point, 
+causing critical pipelines to fail silently at 3 AM.
+Architecting pipelines to handle data growth dynamically—using AQE and proper partitioning—ensures we don't violate daily SLAs as the company scales.
+
+Design Decision :- 
+Junior engineers usually try to fix OOMs by just throwing money at the problem—they request massive,
+expensive EC2 instances with 256GB of RAM. As a senior engineer, I almost never scale up hardware first.
+I look at the Spark UI and flame graphs to find the actual code bottleneck. 99% of the time, replacing a blind .collect(), pushing down a filter,
+or tuning the partition count from 200 to 2000 fixes the OOM while keeping our cloud bill flat.
