@@ -1,0 +1,24 @@
+Predicate Pushdown is a crucial query optimization technique where the execution engine pushes your filtering logic (the WHERE clause) all the way down to the underlying storage system, 
+filtering the data on the disk before it ever gets loaded into the cluster's memory.
+
+Technical Breakdown :- 
+
+If you write a PySpark script that reads a 100-gigabyte table and then applies a .filter(col('status') == 'ACTIVE') ten lines later,
+naive execution would pull all 100GB across the network into RAM, and then throw away 90GB of it. With predicate pushdown, 
+Spark's Catalyst Optimizer rewrites the physical plan to send that filter directly to the file reader.
+The storage layer uses metadata—specifically the minimum and maximum value statistics stored inside the row groups of 
+columnar files—to mathematically prove which chunks of data do not contain 'ACTIVE' records, bypassing those chunks completely without reading them.
+
+Buisness Context :- 
+
+This is the single biggest driver of I/O cost reduction in modern cloud architecture. By skipping terabytes of irrelevant data at the storage level, 
+you drastically reduce network egress costs (from S3 or ADLS), prevent out-of-memory errors on your cluster, and cut query times from minutes down to seconds,
+directly improving the responsiveness of downstream BI dashboards.
+
+Design Decision :- 
+
+The critical caveat is that predicate pushdown is highly dependent on your physical storage format. 
+It is virtually useless on raw CSV or JSON files, which lack metadata and force Spark into a full table scan regardless of your filters.
+As a data engineer, I ensure we exclusively use optimized columnar formats like Parquet, Delta Lake, or Apache Iceberg. Furthermore, 
+I deliberately physically sort or 'Z-order' the data on disk based on the most frequently filtered columns (like dates or tenant IDs).
+This tightly clusters the min/max statistics, allowing predicate pushdown to skip 99% of the underlying files with surgical precision.
