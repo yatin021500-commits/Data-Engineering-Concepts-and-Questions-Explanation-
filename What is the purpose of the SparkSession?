@@ -1,0 +1,23 @@
+Think of the SparkSession as the master control room for your Spark application. Introduced in Spark 2.0, it is the single, unified entry point that allows a developer
+to interact with Spark's underlying execution engine to read data, write SQL, and manipulate DataFrames.
+
+Technical Breakdown :- 
+Before Spark 2.0, the API was highly fragmented. If you wanted to run core RDD operations, you needed a SparkContext.
+If you wanted to write SQL, you had to instantiate a separate SQLContext. 
+If you wanted to talk to a Hive metastore, you needed a HiveContext. 
+The SparkSession cleanly encapsulates all of these into one unified object. 
+Under the hood, it still manages the physical SparkContext to negotiate resources with the cluster manager, but it acts as a high-level facade,
+giving you direct access to the Catalyst Optimizer, the catalog registry for tables and views, and runtime configuration settings.
+
+Buisness Context :- 
+From a business perspective, the SparkSession drastically improved developer productivity and codebase maintainability.
+Data engineers no longer have to navigate a confusing web of interconnected contexts just to build a simple ETL pipeline.
+It standardized Spark code across the industry, making pipelines faster to write, easier to code-review, and simpler for new hires to understand.
+
+Design Decision :- 
+
+In modern managed platforms like Databricks or Synapse, the SparkSession is already instantiated for you globally as the spark variable.
+However, when writing raw production code packaged into CI/CD pipelines,
+I always strictly enforce the singleton builder pattern: SparkSession.builder.getOrCreate(). 
+This prevents the catastrophic error of a developer accidentally spinning up a second SparkSession within the same JVM,
+which can lead to severe memory leaks, conflicting cluster configurations, and completely corrupted temporary SQL views.
