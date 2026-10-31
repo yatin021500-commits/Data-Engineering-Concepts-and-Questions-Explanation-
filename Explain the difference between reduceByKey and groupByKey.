@@ -1,0 +1,32 @@
+Choosing between reduceByKey and groupByKey is the classic Apache Spark interview question
+because one is highly optimized, and the other is a notorious cluster-killer. 
+While both group data by a specific key, the difference lies entirely in how they handle 
+data shuffling across the network.
+
+Technical Breakdown :- 
+groupByKey (The Naive Approach): This method shuffles all the raw data across the network 
+before doing any aggregation. If you have 10 million sales records for 'New York' distributed across your cluster, 
+Spark will serialize all 10 million individual records, push them across the network,
+and dump them onto a single worker node to be grouped.
+
+reduceByKey (The Optimized Approach): This method performs a 'map-side combine'.
+It aggregates the data locally on each individual worker node first. Instead of sending 
+10 million raw records across the network, each worker node calculates its own local total for 'New York',
+and then sends exactly one record—the local subtotal—across the network to be combined into a final grand total.
+
+Buisness Context :- 
+Network I/O is the most expensive and slowest operation in cloud computing.
+Using groupByKey maxes out your network bandwidth, spikes cluster compute costs, and 
+frequently causes pipelines to crash with Out-Of-Memory (OOM) errors because a single node cannot 
+hold all the raw values for a heavily skewed key. reduceByKey prevents this, 
+ensuring pipelines finish cheaply and reliably.
+
+Design Decision :- 
+In practice today, as a data engineer,
+I rarely write either of these commands because they belong to the legacy RDD API.
+We use the DataFrame API instead. When you write df.groupBy("city").sum("sales") 
+in PySpark or Spark SQL, the Catalyst Optimizer is smart enough to automatically apply the optimized 
+map-side combine logic of reduceByKey under the hood. 
+However, understanding this mechanic is absolutely mandatory for debugging,
+especially if an engineer writes a custom User Defined Aggregation Function (UDAF) that inadvertently 
+forces Catalyst to fall back to a groupByKey execution plan.
