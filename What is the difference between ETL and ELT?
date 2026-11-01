@@ -1,0 +1,27 @@
+The core difference between ETL (Extract, Transform, Load) and ELT (Extract, Load, Transform) is simply a matter 
+of where the heavy lifting happens: inside a dedicated middleman server, or directly inside the final destination database.
+
+Technical Breakdown :-
+
+ETL (The Traditional Way): Data leaves the source and lands in a separate, 
+dedicated transformation engine (like an Informatica server or an on-premise Hadoop cluster). 
+It gets cleaned, joined, and aggregated there. Only the final, polished data is written into the Data Warehouse.
+
+ELT (The Modern Way): Data is extracted and loaded immediately into the target Cloud Data Warehouse 
+(like Snowflake or BigQuery) or Lakehouse in its rawest, messiest form. 
+The transformation happens afterward, executing directly inside the warehouse using its own massive compute power.
+
+Buisness Context :-
+This shift was entirely driven by the economics of the cloud. Historically, 
+legacy on-premise data warehouses had highly constrained compute and expensive storage; 
+you couldn't afford to waste their cycles cleaning messy data. Today, cloud storage is practically free,
+and cloud compute is infinitely scalable. It makes business sense to ingest all raw data instantly,
+ensuring no data is ever dropped, and transform it on-demand.
+
+Design Decision :- 
+As a modern data engineer, I almost exclusively build ELT architectures,
+and I strictly decouple the 'EL' from the 'T'. I use managed services like Fivetran or Airbyte to mindlessly extract
+and load raw data into a 'Bronze' layer. Then, I use a framework like dbt (data build tool) to handle the 'T'. 
+dbt executes modular, version-controlled SQL directly against the warehouse to transform that raw data into 'Silver' 
+and 'Gold' models. This eliminates the need to maintain fragile, custom Python transformation servers in the middle 
+of our pipeline.
