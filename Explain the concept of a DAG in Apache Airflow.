@@ -1,0 +1,30 @@
+In Apache Airflow, a DAG—or Directed Acyclic Graph—is the master blueprint of your data pipeline.
+Written in Python, it defines exactly what tasks need to run, in what order, and when, 
+acting as the traffic cop for your data infrastructure without actually processing any of the data itself.
+
+Technical Breakdown :- 
+Directed: The pipeline has a strict, one-way execution flow.
+If you write Task_A >> Task_B, Airflow guarantees that Task B will not start until Task A has successfully completed.
+
+Acyclic: There are no infinite loops allowed. Data flows from a starting point to a completion state. 
+Task B cannot point back to Task A; if it did, the pipeline would trap itself in a cycle and never finish.
+
+Graph: This is the visual topology.
+The 'nodes' are your Operators (like a SnowflakeOperator executing a query or a BashOperator running a script),
+and the 'edges' are the dependency rules connecting them.
+
+Buisness Context :- 
+Before Airflow, businesses relied on messy, disconnected 'cron' jobs scattered across random servers.
+If a 2 AM extraction failed, the 3 AM transformation would still run on empty data, 
+and executives would get blank reports at 8 AM. Airflow DAGs provide centralized observability;
+if a task fails, the DAG pauses downstream tasks, alerts the engineering team, 
+and allows for one-click retries, guaranteeing data SLAs.
+
+Design Decision :- 
+The most common mistake I see some engineers make is treating Airflow like an execution engine,
+writing heavy Pandas data transformations directly inside a PythonOperator.
+This bloats the Airflow worker nodes and causes OOM crashes. As a data engineer,
+I strictly enforce the rule: Airflow is an orchestrator, not a bulldozer. 
+I design DAGs using the KubernetesPodOperator or cloud-native triggers (like DatabricksSubmitRunOperator).
+The DAG simply pings external, scalable compute clusters to do the heavy lifting, 
+monitors their status, and moves to the next step.
