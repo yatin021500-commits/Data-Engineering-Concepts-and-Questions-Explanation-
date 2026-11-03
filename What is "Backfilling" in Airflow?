@@ -1,0 +1,27 @@
+Backfilling is essentially a time machine for your data pipelines. 
+It allows you to force an orchestrator like Airflow to look backward and execute a job for dates in the past,
+rather than just ticking forward on its normal schedule.
+
+Technical Breakdown :- 
+Airflow pipelines are heavily driven by the concept of a logical_date (formerly execution_date). 
+When a DAG runs, Airflow injects this timestamp into the tasks. A backfill is triggered—usually via the 
+CLI command airflow dags backfill—by providing a historical start and end date. 
+Airflow then mathematically calculates every scheduled interval (like every day or every hour) 
+that occurred within that window. It spawns a distinct DAG run for each interval, 
+passing the specific historical logical date into the execution environment so your scripts pull exactly that day's
+slice of data.
+
+Buisness Context :- 
+This is critical for two major business scenarios: Disaster Recovery and Feature Engineering. 
+If an upstream API silently failed and dropped data for two weeks, we need to backfill to recover those 
+missing records. Alternatively, if the business defines a brand new KPI today, executives can't wait a year 
+to see year-over-year trends. We backfill the pipeline to retroactively calculate that new KPI across the 
+last three years of raw historical data.
+
+Design Decision :-
+The most devastating mistake junior engineers make with backfills is writing SQL that 
+relies on database functions like CURRENT_DATE() or CURRENT_TIMESTAMP(). 
+If you launch a backfill for the year 2023 today, every single historical run will evaluate to today's date,
+completely destroying your table partitions. As a senior engineer, I enforce strict CI/CD checks to ensure all 
+date filters are parameterized using Airflow's Jinja macros, like {{ ds }}. 
+This guarantees that when Airflow simulates running on October 1st, the SQL query explicitly filters for October 1st.
