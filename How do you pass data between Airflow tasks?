@@ -1,0 +1,28 @@
+In Apache Airflow, tasks execute in completely isolated environments, often on entirely different physical worker nodes. 
+To bridge this gap, Airflow uses a messaging system called XComs—short for Cross-Communications—but misunderstanding 
+what XComs are actually built for is the number one cause of total Airflow outages.
+
+Technical Breakdown :- 
+By design, Airflow tasks do not share memory. If Task A needs to send information to Task B, 
+it performs an xcom_push. This serializes a small key-value pair and physically writes it into Airflow’s 
+underlying metadata database (usually Postgres or MySQL). Later, Task B performs an xcom_pull to query that 
+database and retrieve the value. In modern Airflow using the TaskFlow API (the @task decorator), 
+this is handled invisibly for you: returning a value from a Python function automatically pushes it to XCom, 
+and passing it as an argument to the next function automatically pulls it.
+
+Buisness Context :- 
+XComs are essential for dynamic, cloud-native orchestration. For example, if your pipeline dynamically spins up
+an ephemeral AWS EMR cluster to save money, the exact cluster_id isn't known ahead of time. 
+Task A spins it up and pushes the generated cluster_id to XCom. 
+Task B pulls that exact ID to submit the Spark job, and Task C pulls it to shut the cluster down, 
+ensuring we don't leave expensive ghost infrastructure running.
+
+Design Decision :-
+The most lethal anti-pattern I see from some engineers is attempting to pass actual data—like a 50MB Pandas 
+DataFrame—through an XCom. Because XComs are stored directly in the orchestrator's Postgres database,
+this instantly bloats the tables, consumes all connections, and crashes the entire Airflow instance 
+for the whole company. As a data engineer, I enforce the 'Pointer Pattern.' Task A writes the 50MB
+file to an S3 bucket, and pushes only the S3 URI string (a few bytes) to XCom. 
+Task B pulls the string and downloads the payload directly from S3, keeping Airflow's database completely 
+isolated from the data plane.
+
