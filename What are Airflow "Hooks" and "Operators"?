@@ -1,0 +1,31 @@
+In Apache Airflow, if an Operator is the person flipping the switch, 
+the Hook is the hidden electrical wiring connecting that switch to the power grid. 
+They work in tandem, but you cannot build secure, extensible pipelines without understanding 
+the strict boundary between them.
+
+Technical Breakdown :- 
+Operators: An Operator represents a single, logical task in your DAG 
+(like executing a SQL script or transferring a file). 
+It is the 'What'. When you place a SnowflakeOperator in your DAG,
+you are telling Airflow what you want to achieve.
+
+Hooks: A Hook is the low-level interface that handles the 'How'.
+The SnowflakeOperator actually has no idea how to talk to Snowflake over the network. 
+Under the hood, it instantiates a SnowflakeHook. 
+The Hook manages the messy mechanics: it retrieves the connection credentials,
+establishes the TCP session, handles the API request, and manages the teardown.
+
+Buisness Context :- 
+This separation of concerns is a massive win for enterprise security.
+Because Hooks integrate directly with Airflow's Connection metadata—which we typically back with a 
+secure vault like AWS Secrets Manager or HashiCorp Vault—we can automatically 
+rotate database passwords or API keys without touching a single line of pipeline code.
+It ensures strict Infosec compliance by keeping secrets entirely out of the DAG files.
+
+Design Decision :- 
+When data engineers need to pull data from a niche, proprietary internal API, 
+they usually take the easy way out: they write a massive, ugly PythonOperator filled with raw requests.get() calls,
+hardcoded tokens, and inline retry loops. As a data engineer, I reject that in code review. 
+I will build a custom internal Hook to encapsulate the API's unique authentication and pagination logic,
+and then build a custom Operator on top of it. 
+This keeps the actual DAG file declarative, clean, and incredibly easy to unit test using mocked Hook connections.
