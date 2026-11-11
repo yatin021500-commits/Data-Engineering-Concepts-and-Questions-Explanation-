@@ -1,0 +1,29 @@
+Pandas is the undisputed heavyweight champion of data analysis in Python—the foundational library that made Python the go-to language for data science.
+But architecturally, it has one fatal flaw for production systems: it expects to eat its entire meal in one single bite.
+
+Technical Breakdown :-
+At its core, pandas is an in-memory, single-threaded DataFrame library built on top of NumPy arrays. 
+It provides a phenomenally intuitive API for filtering, joining, and aggregating tabular data.
+However, you should NOT use pandas under three specific conditions:
+
+Data Exceeds RAM: Pandas uses 'eager evaluation' and loads the entire dataset into memory. 
+Furthermore, operations like joins often create massive intermediate copies. The rule of thumb is that your RAM must be 5x to 10x larger than your dataset. 
+If you have 16GB of RAM, a 5GB CSV will likely crash your machine.
+
+Highly Parallel Workloads: Because it relies on standard Python, pandas is bound by the Global Interpreter Lock (GIL).
+It processes data sequentially on a single CPU core, completely ignoring the other 15 cores on your modern server.
+
+Complex Enterprise ETL: Pandas lacks native lazy-evaluation (query optimization) and doesn't inherently support reading/writing partitioned data 
+across a network (like interacting with HDFS or cloud object storage natively at scale).
+
+Buisness Context :- 
+For a data scientist prototyping a machine learning model on a 500MB extract, 
+pandas is the perfect tool for fast, ad-hoc discovery. But for enterprise data engineering, baking pandas into a daily ETL pipeline is a ticking time bomb.
+As the business organically grows and the daily data ingestion scales from megabytes to gigabytes, that pandas script will inevitably hit the server's memory 
+ceiling and fail silently in the middle of the night, violating critical data SLAs.
+
+Design Decision :- 
+As a senior engineer, I actively strip pandas out of heavy production data pipelines. 
+If a pipeline is processing terabytes of data, I rewrite the logic in PySpark to distribute the workload across a cluster with lazy evaluation.
+If we are architecturally bound to a single physical machine but need to process 50GB of data, I pivot to Polars or DuckDB. Polars, written in Rust, uses lazy execution, query optimization,
+and fully utilizes every CPU core to process data in streaming chunks, bypassing the pandas memory bottleneck entirely without needing a full Spark cluster.
