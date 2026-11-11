@@ -1,0 +1,25 @@
+The yield keyword is the difference between trying to drink from a firehose and sipping from a straw. 
+While a standard return statement spits out an entire dataset all at once and terminates the function, 
+yield pauses the function, handing you one piece of data at a time while remembering exactly where it left off.
+
+Technical Breakdown :-
+When Python sees yield inside a function, it automatically converts that function into a Generator.
+
+The return way (Eager Evaluation): The function builds the entire result set in memory—like appending a million rows to a list—and then hands the massive list back.
+
+The yield way (Lazy Evaluation): The function creates an iterator. When the pipeline asks for data (via a for loop or next()), the function wakes up, runs until it hits 
+the yield statement, emits exactly one value, and instantly freezes its local variables in state. When asked again, it resumes perfectly from that frozen state to process the next item.
+
+Buisness Context :- 
+This is the ultimate defense against Out-of-Memory (OOM) crashes in Python data engineering. 
+If you need to parse a 100-gigabyte JSON log file on a cheap Airflow worker node with only 4GB of RAM,
+a standard function will attempt to load all 100GB into memory and instantly explode. By using yield,
+you stream the file line-by-line, allowing the business to process petabytes of data on heavily constrained, inexpensive cloud hardware.
+
+Design Decision :- 
+The most common anti-pattern I see in code reviews is an engineer writing a beautiful, 
+memory-efficient generator using yield to pull from a paginated REST API, only to have another developer downstream wrap that generator in a list()
+call—instantly forcing the entire stream into RAM and defeating the entire purpose. Additionally, beyond data processing, I use yield extensively 
+in Pytest fixtures for pipeline testing; it acts as the perfect context manager, cleanly setting up a mock database, 
+yielding the connection to the test, and automatically tearing it down when the test finishes.
+
