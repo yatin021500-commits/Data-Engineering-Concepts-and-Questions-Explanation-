@@ -1,0 +1,21 @@
+Think of traditional batch ingestion like taking a single photograph of your database every night at midnight. 
+Change Data Capture, or CDC, is like setting up a security camera: it records a continuous, real-time video stream of every single INSERT, UPDATE, and DELETE exactly as they happen.
+
+Technical Breakdown :- 
+Traditional pipelines rely on query-based extraction, executing a SELECT * WHERE updated_at > last_run against the database.
+This approach is slow, degrades production performance, and fundamentally misses intermediate changes. True CDC is log-based.
+Every operational database (like Postgres or MySQL) maintains a Write-Ahead Log (WAL) or Binlog for its own internal crash recovery.
+Modern CDC tools, like Debezium or AWS DMS, silently read this underlying log file. They instantly translate raw database transactions into an event 
+stream—typically fed into Apache Kafka—without executing a single SQL query or placing any read-locks on the live tables.
+
+Buisness Context :- 
+In modern business, batch data is often dead data. If an e-commerce customer adds an item to their cart, changes the quantity, and then deletes it over the course of an hour,
+a nightly batch job will completely miss that behavioral data. CDC enables real-time use cases like dynamic pricing algorithms, live fraud detection, and micro-segmentation, 
+giving the business an absolute, second-by-second pulse on user behavior.
+
+Design Decision :- 
+Engineers often try to build 'real-time' pipelines by writing aggressive cron jobs that poll the database every 60 seconds,
+which rapidly triggers a CPU meltdown on the production server. As a data engineer, I mandate log-based CDC for real-time ingestion.
+However, the architectural tradeoff is complex state management: CDC produces a massive append-only log of granular events.
+To make this data usable for analysts, I architect a downstream pipeline using Spark Structured Streaming and Apache Iceberg, 
+which continuously applies those millions of updates and deletes to maintain a perfectly mirrored, queryable replica in the data lake.
