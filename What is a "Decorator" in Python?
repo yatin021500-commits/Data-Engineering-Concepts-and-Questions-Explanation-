@@ -1,0 +1,21 @@
+Think of a Python decorator as a high-tech exoskeleton for your functions. It is a function that takes another function as its input, 
+straps on additional capabilities—like automated retries, execution timing, or logging—and returns a heavily upgraded version, 
+all without changing a single line of the original function's internal code.
+
+Technical Breakdown :- 
+Because functions in Python are 'first-class citizens', they can be passed around as arguments just like strings or integers.
+A decorator leverages this by acting as a wrapper. When you place the @ symbol (like @timer) directly above a function definition, 
+Python intercepts the execution. Instead of running the raw function, the interpreter runs the decorator first.
+The decorator executes its own pre-processing logic, triggers the original function from within itself (via a closure),
+captures the result, executes any post-processing logic, and finally returns the output.
+
+Buisness Context :-
+From a business perspective, decorators enforce the DRY principle—Don't Repeat Yourself—at an enterprise scale. 
+If you have 50 different data extraction scripts and the business mandates that all pipeline durations must be tracked for cloud cost optimization, you don't copy-paste timing logic 
+into 50 different files. You write one @track_duration decorator and stamp it across the codebase, standardizing observability instantly with zero risk of breaking the core logic.
+
+Design Decision :- 
+engineers often avoid writing custom decorators because the nested *args and **kwargs syntax looks intimidating, resulting in spaghetti code bloated with repetitive try-except blocks.
+As a data engineer, I use decorators aggressively to build resilient pipelines. I wrap volatile third-party API calls in a @retry_with_exponential_backoff decorator to silently
+handle transient network drops. Furthermore, mastering this is mandatory for modern data engineering: Apache Airflow’s TaskFlow API relies entirely on the @task decorator 
+to magically convert standard Python functions into distributed DAG nodes, completely hiding the complex XCom state-passing mechanics under the hood.
