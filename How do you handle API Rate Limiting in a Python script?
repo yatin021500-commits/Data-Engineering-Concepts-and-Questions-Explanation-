@@ -1,0 +1,35 @@
+An HTTP 429 'Too Many Requests' response isn't a pipeline failure; it's simply a server politely asking you to slow down. 
+Treating rate limits as fatal exceptions is the fastest way to build a fragile data pipeline that crashes at the slightest hint of network traffic.
+
+Technical Breakdown :- 
+To handle this mathematically without crashing, we use a strategy called Exponential Backoff with Jitter. 
+If an API rejects our request, we don't blindly try again or wait a static 60 seconds. Instead, we pause for a short duration (like 2 seconds) and retry. 
+If it fails again, we double the wait to 4 seconds, then 8, then 16, capping at a maximum threshold.
+Crucially, we inject 'Jitter'—a small randomized time variance (e.g., 4.3 seconds instead of exactly 4.0). 
+This ensures that if ten parallel worker nodes get rate-limited simultaneously, they don't all wake up at the exact 
+same millisecond and accidentally DDoS the target server in a 'thundering herd'.
+
+Buisness Context :- 
+Enterprise platforms like Salesforce, Shopify, or Zendesk strictly throttle their API endpoints.
+If your nightly ingestion job crashes due to a temporary 5-second traffic spike, downstream financial reports will be missing critical
+revenue data at 8 AM. Graceful rate-limit handling guarantees that the pipeline bends instead of breaks, ensuring 100% data completeness without manual engineering intervention.
+
+Design Decision :- 
+engineers usually clutter their extraction scripts with messy while loops and manual time.sleep() commands.
+As a data engineer, I abstract this away using Python decorators from the tenacity or backoff libraries, keeping the core logic completely clean. 
+Furthermore, if I am running 50 distributed Airflow workers hitting the same API, local exponential backoff isn't enough. 
+I architect a centralized 'Token Bucket' using Redis, forcing all 50 workers to draw from a globally shared pool of API tokens,
+strictly guaranteeing we never breach the provider's rate limit in the first place.
+
+Note:- How centralized token bucket in redis works?
+In a distributed data architecture, local rate limiting is blind. If you have 50 Airflow worker nodes and an external API limit of 10 requests per second,
+a worker has no idea how many requests the other 49 nodes are making. If they all fire at once, you hit 50 requests and get blocked.
+
+To prevent this, we use a centralized, blazing-fast in-memory database like Redis to act as the 'Token Bucket'.
+
+The Bucket: We configure Redis to hold a maximum of 10 digital 'tokens'.
+
+The Refill: A background process refills this bucket at a strict rate of 10 tokens every second.
+
+The Check: Before any worker anywhere in the cluster fires an API request, it must ping Redis and grab a token. 
+If the bucket is empty (0 tokens), the worker pauses locally and waits for the next refill. The external API is completely shielded from the chaos.
