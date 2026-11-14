@@ -1,0 +1,27 @@
+In data engineering, an SLA—or Service Level Agreement—is the ultimate contract of trust between the data team and the business. 
+It is the mathematical guarantee that a specific dataset will not only be available by a strict deadline, but that it will be perfectly accurate and fully complete when it arrives.
+
+Technical Breakdown :- 
+Technically, an SLA is configured directly inside your orchestrator. In Apache Airflow, for example, you can set an sla=timedelta(hours=2) parameter on a task. 
+If the execution engine is starved for resources, or if a data skew causes the query to spin indefinitely and cross that two-hour threshold, 
+Airflow doesn't necessarily kill the job, but it triggers an 'SLA Miss' callback. However, a true data SLA is three-dimensional:
+
+Freshness: The data must arrive by 8:00 AM.
+
+Quality: The 'revenue' column must have a 0% NULL rate.
+
+Availability: The data warehouse must be online to serve the query in under 5 seconds.
+
+
+Buisness Context :-
+
+Without SLAs, a data platform is just a research project. If the global sales pipeline finishes at 9:30 AM instead of 8:00 AM,
+the executive team has already had their morning strategy meeting using stale data. Once the business loses trust in the dashboard's timeliness or accuracy, 
+they stop using the data platform entirely and go back to passing around manual Excel spreadsheets.
+
+Design Decision :- 
+The most common mistake engineers make is attaching SLA alerts to every single intermediate staging task in the DAG, 
+which instantly creates alert fatigue and causes the team to ignore the Slack channel. As a data engineer, I only apply strict SLAs to the absolute boundary 
+layer—the final 'Gold' tables that power critical BI dashboards or live ML models. Internally, I use Service Level Objectives (SLOs) and anomaly detection to 
+silently warn the engineering team if an upstream task is running 15% slower than usual, allowing us to dynamically scale up cluster compute and rescue the pipeline before
+the downstream business SLA is ever breached.
