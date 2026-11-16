@@ -1,0 +1,25 @@
+Before Snowflake, scaling a data warehouse was like being forced to buy a larger house just because you needed a bigger oven. 
+Snowflake completely shattered this legacy constraint by introducing a multi-cluster, shared-data architecture that physically and logically divorces compute from storage.
+
+Technical Breakdown :-
+Snowflake's architecture is divided into three completely distinct, decoupled layers:
+
+Centralized Storage Layer: The actual data lives at the bottom, stored as immutable, compressed micro-partitions on cheap cloud object storage (like AWS S3, Azure Blob, or GCS).
+
+Multi-Cluster Compute Layer: Above storage sit 'Virtual Warehouses'. These are stateless, independent compute clusters that execute the queries.
+Because they don't own the underlying disks, infinite isolated compute clusters can read the exact same centralized storage simultaneously.
+
+Cloud Services Layer: The 'brain' sitting at the very top. It handles authentication, metadata management, transaction locks, and query optimization, ensuring the independent
+compute clusters always see a perfectly consistent state of the database.
+
+Buisness Context :-
+In legacy systems, the Monday morning 'reporting rush' would bring the database to its knees because the Finance team, the Marketing team, and the ETL pipelines
+were all fighting over the exact same CPU. In Snowflake, every department gets its own dedicated compute cluster. 
+They all query the exact same single source of truth without experiencing any resource contention, and the business only pays for the exact seconds those clusters are actively running.
+
+Design Decision :- 
+Engineers often try to solve slow dashboards by blindly scaling up a Snowflake warehouse from a 'Small' to an 'XX-Large', 
+immediately incinerating the company's credit budget. As a data engineer, I diagnose the actual bottleneck first: if a single query is mathematically complex,
+I scale up for more power. But if the query is simple and the delay is caused by 50 analysts running it at once, I scale out by configuring a Multi-Cluster Warehouse
+to automatically spawn parallel compute nodes. Furthermore, this decoupled architecture unlocks my favorite engineering capability: 'Zero-Copy Cloning', which allows 
+me to instantly clone a petabyte-scale production database into a dev sandbox for testing without duplicating a single byte of physical storage.
