@@ -1,0 +1,28 @@
+CSV is a format designed for humans to read on a screen; Parquet is a format designed for distributed supercomputers to process at petabyte scale.
+Trying to power a modern cloud data lake with CSV files is the architectural equivalent of trying to heat a mansion with a matchbook.
+
+Technical Breakdown :- 
+The massive performance gap between the two comes down to three structural pillars:
+
+Columnar vs. Row-Based: A CSV stores data row-by-row. If you run SELECT SUM(revenue) FROM table, 
+the engine must read every single field across every single row just to find the revenue values.
+Parquet stores data column-by-column. Spark can extract the isolated 'revenue' column and completely ignore the other 99 columns on disk.
+
+Aggressive Compression: Because Parquet physically groups identical data types together (e.g., millions of integer timestamps stacked sequentially),
+it achieves extreme compression using techniques like Dictionary and Run-Length Encoding. A 100GB CSV will routinely shrink to a 15GB Parquet file.
+
+Embedded Metadata & Predicate Pushdown: CSVs are dumb text files. Parquet files are self-describing.
+They embed their own strict schema and block-level statistics (like min/max values). If your query filters for year = 2026, the engine reads the Parquet metadata,
+realizes a specific file only holds 2024 data, and safely skips the entire file without ever opening it.
+
+Buisness Context :-
+In cloud platforms like AWS Athena, BigQuery, or Snowflake, you are billed directly based on the volume of data stored and the megabytes of data scanned per query.
+By shrinking storage footprints by 85% and allowing the compute engine to skip irrelevant columns and files, 
+migrating an enterprise data lake from CSV to Parquet routinely slashes monthly cloud infrastructure bills by hundreds of thousands of dollars while making BI dashboards infinitely faster.
+
+Design Decision :- 
+Some engineers often fight to keep data in CSV format at the staging layer simply because it's comfortable; they can double-click it and inspect the data in Excel.
+As a data engineer, I actively remove human readability from the equation to prioritize machine efficiency.
+Even if a third-party vendor drops a CSV onto our SFTP server, my very first pipeline step is to ingest it, enforce a strict schema, and write it out as a Snappy-compressed 
+Parquet file in our 'Bronze' Lakehouse layer. Furthermore, Parquet natively handles deeply nested JSON-like data structures—like arrays and structs—which CSV fundamentally
+cannot do without brittle string-parsing hacks.
