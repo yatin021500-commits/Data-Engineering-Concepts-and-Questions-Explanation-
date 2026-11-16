@@ -1,0 +1,24 @@
+If Parquet is the ultimate library optimized for reading data, Avro is the ultimate printing press optimized for writing it.
+The choice between them isn't a battle of which format is objectively superior; it is entirely dictated by whether your system is read-heavy or write-heavy.
+
+The architectural divide comes down to how they lay out data on disk:
+
+Parquet (Columnar): It stores data by columns. This allows query engines to use 'Predicate Pushdown' to skip irrelevant columns and files entirely,
+making it phenomenally fast and heavily compressed for analytical (OLAP) queries like GROUP BY or SUM.
+
+Avro (Row-Based): It stores data row-by-row in a compact binary format. Because it doesn't have to transpose incoming records into columns, appending new data is incredibly fast.
+Crucially, Avro embeds its own schema—written in plain JSON—directly inside the binary file header. 
+This makes it the undisputed king of robust schema evolution, as the file explicitly tells the downstream engine exactly how to deserialize the payload,
+even if fields have been added, renamed, or deleted.
+
+Buisness Context :- 
+Using the wrong format destroys infrastructure budgets. If you store your massive analytical data lake entirely in Avro, your BI dashboards will be forced to execute 
+full-table scans for every query, sending your cloud I/O bills through the roof. Conversely, if you force a high-throughput, real-time data stream to write directly into columnar Parquet,
+the CPU overhead required to constantly transpose individual rows into columns will bottleneck your entire ingestion architecture.
+
+Design Decision :- 
+Some engineers often try to standardize on a single file format for the entire company to simplify the codebase.
+As a data engineer, I architect systems that leverage both. I strictly mandate Avro for the ingestion layer—specifically as the 
+payload format for Apache Kafka event streams—because of its seamless integration with the Confluent Schema Registry and lightning-fast write speeds.
+But the moment that streaming data lands in our 'Bronze' Data Lake, my Spark jobs instantly rewrite it into Parquet for the 'Silver' and 'Gold' layers, optimizing it for cheap,
+lightning-fast analytical reads by the data science team.
