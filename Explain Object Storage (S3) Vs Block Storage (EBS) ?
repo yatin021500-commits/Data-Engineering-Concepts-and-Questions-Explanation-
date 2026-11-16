@@ -1,0 +1,25 @@
+If Block Storage is the high-performance hard drive physically bolted to the motherboard of your laptop, Object Storage is a massive, infinitely expanding digital warehouse
+located across the internet. They solve fundamentally different problems: one provides lightning-fast micro-edits, while the other provides limitless, dirt-cheap scale.
+
+Technical Breakdown :- 
+The architectural difference lies in how data is structured and accessed:
+
+Block Storage (EBS): Data is chopped into raw, fixed-size chunks (blocks). It is physically mounted to a single virtual machine (like an EC2 instance) and communicates directly
+with the operating system. Because you can rewrite a single 4KB block without touching the rest of the disk, it delivers extreme IOPS and ultra-low latency, making 
+it mandatory for running live databases like PostgreSQL or booting operating systems.
+
+Object Storage (S3): Data is not stored in hierarchical folders or blocks; it is stored in a massive flat namespace.
+Every file is bundled with a rich metadata tag and given a unique URL identifier. You interact with it exclusively via REST APIs (HTTP GET/PUT). 
+Crucially, objects are immutable. If you want to change one single comma in a 50GB CSV file on S3, you cannot edit the block—you must re-upload the entire 50GB object.
+
+Buiness Context :-
+The business driver here is economics. Block storage is incredibly expensive; you pay for the maximum capacity you provisioned, 
+even if it sits empty. Object storage costs pennies per gigabyte, charges you strictly for what you use, and automatically replicates 
+across multiple geographic zones to provide '11-nines' (99.999999999%) of durability. It is the only financially viable way to store petabytes of historical enterprise data.
+
+Design Decision :- 
+A classic mistake is treating Object Storage like a standard file system—trying to run an active transactional database directly on top of S3,
+which results in latency and eventual consistency bugs. As a data engineer, I use both to achieve decoupled elasticity. 
+I design modern Lakehouses where the absolute source of truth—petabytes of Parquet files—sits safely on cheap S3 Object Storage. 
+When an analytical workload runs, I dynamically spin up temporary compute clusters armed with ultra-fast EBS Block Storage. 
+The cluster pulls the data from S3, processes it at lightning speed on EBS, writes the results back to S3, and completely destroys the EBS drives to save the company money.
