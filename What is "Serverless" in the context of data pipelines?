@@ -1,0 +1,24 @@
+Serverless doesn't mean there are no servers; it simply means the servers are no longer your problem.
+It is the architectural shift from renting an entire factory and paying for the electricity 24/7, to dropping your raw materials into a magic box and 
+paying only for the exact seconds it takes to process them.
+
+Technical Breakdown :- 
+In a traditional provisioned pipeline, you spin up a cluster (like AWS EMR or an EC2 fleet). You must predict your workload, set auto-scaling rules, manage OS patches, 
+and pay for the infrastructure as long as it is turned on.
+Serverless data tools—like AWS Glue, Google BigQuery, or AWS Lambda—abstract all of this away. You simply provide the Python script, the Spark job, or the SQL query.
+The cloud provider maintains a massive, hidden pool of compute resources. When your pipeline triggers, the provider instantly allocates the exact amount of CPU and RAM needed, runs the code,
+returns the output, and immediately tears the environment down. You don't manage nodes; you just execute code.
+
+Buisness Context :- 
+This eliminates the 'Idle Tax'. Most enterprise data pipelines are spiky—they run heavy batch jobs at 2 AM and sit completely idle at 2 PM.
+With provisioned servers, you pay for that idle time. With serverless, your cloud bill drops to zero the millisecond the pipeline finishes. 
+Furthermore, it drastically reduces Total Cost of Ownership (TCO) because highly-paid data engineers stop acting as part-time DevOps administrators.
+
+Design Decision :- 
+The fatal flaw of serverless is that it is a financial trap for predictable, heavy workloads. 
+While serverless is incredibly cheap for spiky, event-driven ingestion, the compute cost per-second is significantly higher than a provisioned server.
+If you have a massive Kafka streaming job that processes 10 terabytes of data continuously 24/7, a serverless architecture will bankrupt your cloud budget.
+As a data engineer, I architect hybrid systems: I use serverless Lambda functions to catch unpredictable, low-volume webhook events, but I route the massive, 
+predictable nightly transformations to dedicated, reserved-instance Spark clusters to tightly control costs.
+
+In short to handle a spike serverless is a good option.
