@@ -1,0 +1,21 @@
+If you kept every single document you’ve ever owned on your physical desk, you’d run out of space and go bankrupt buying more desks. 
+Data tiering is the automated discipline of moving data from the expensive, high-speed desk of active memory down into the cheap, deep-freeze storage of the basement as it ages.
+
+Technical Breakdown :- 
+At the physical infrastructure level, data tiering categorizes storage into 'Hot', 'Warm', and 'Cold' zones. '
+Hot' data—like yesterday's transactions—lives on premium, millisecond-latency storage like NVMe SSDs or AWS S3 Standard. 
+As data cools over 30 to 90 days, automated Lifecycle Policies transition it to 'Warm' storage like S3 Infrequent Access. 
+Finally, data retained purely for multi-year regulatory compliance is archived into 'Cold' storage like S3 Glacier Deep Archive, 
+where storage costs drop by up to 95%, but data retrieval takes hours instead of milliseconds.
+
+Buisness Context :- 
+Storage costs are compounding liabilities. If a company retains 5 petabytes of legacy telemetry logs on premium hot storage for five years, 
+they are burning millions of dollars annually for data nobody is querying. Data tiering mathematically aligns the infrastructure cost of a dataset with its actual,
+present-day business value, slashing cloud storage bills by up to 80% without deleting a single record.
+
+Design Decision :- 
+Some engineers often build rigid, time-based lifecycle rules—like blindly archiving everything older than 90 days—which catastrophically backfires 
+when a data scientist suddenly needs to run a historical ML training job, triggering massive 'data retrieval' penalty fees from Glacier. 
+As a data engineer, I leverage machine-learning-driven tiering, like AWS S3 Intelligent-Tiering. It actively monitors query access patterns at the object level, 
+automatically moving unused data to colder tiers, and instantly snapping it back to hot storage the millisecond it's queried, perfectly optimizing costs with zero manual 
+intervention or retrieval penalties.
