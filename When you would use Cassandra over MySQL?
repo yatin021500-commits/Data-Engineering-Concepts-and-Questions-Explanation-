@@ -1,0 +1,31 @@
+MySQL is a heavily guarded bank vault with one head teller who verifies every single ledger entry so the numbers are always 100% exact.
+Apache Cassandra is a global network of thousands of independent drop-boxes with no single boss—you choose Cassandra over MySQL the moment your 
+business needs massive, nonstop write throughput, linear horizontal scale, and zero-downtime global availability, and you are willing to trade away complex
+SQL joins to get it.
+
+Technical Breakdown :- 
+
+Write Architecture (Masterless LSM-Tree vs. Primary B-Tree): MySQL uses a Primary-Replica model backed by B-Trees. 
+Every write funnels through a single Primary node, creating a hard write bottleneck and a failover delay if that node dies.
+Cassandra is completely masterless (peer-to-peer ring) and uses LSM-Trees (Log-Structured Merge-Trees), appending writes sequentially to a 
+Commit Log and in-memory Memtable. Every node can accept writes simultaneously, so doubling your nodes literally doubles your write throughput.
+
+CAP Theorem & Consistency: MySQL prioritizes ACID compliance and strong consistency across multi-table transactions. 
+Cassandra is an AP (Availability + Partition Tolerance) system with Tunable Consistency—you can configure reads and writes
+per query (e.g., ONE for raw speed, or QUORUM for strong consistency) so the database stays online even if an entire data center goes dark.
+
+Query Flexibility: MySQL excels at normalized schemas and ad-hoc JOINs. Cassandra forbids joins and requires you to denormalize data into wide-column tables
+designed around exact primary-key lookups.
+
+Buisness Context :-
+You choose Cassandra for write-heavy, mission-critical, globally distributed workloads with predictable access patterns—like ingesting millions 
+of IoT sensor pings per second, storing chat history for a global messaging app, or serving real-time clickstream/recommendation feeds where downtime costs 
+millions per minute. You stick with MySQL for core transactional systems—like banking ledgers, e-commerce checkout, or HR/ERP systems—where strict referential
+integrity, multi-row ACID transactions, and unpredictable reporting queries are non-negotiable.
+
+Design Decision :- 
+Some engineers often migrate to Cassandra just to escape MySQL scaling pain, then try to run ad-hoc queries with ALLOW FILTERING—which forces 
+a full-cluster scan and instantly crashes production. As a data engineer, I enforce Query-First Data Modeling: in Cassandra, you design one denormalized 
+table per specific read query, picking a high-cardinality Partition Key to prevent hot nodes and Clustering Columns to sort range scans on disk. 
+I also strictly avoid Cassandra for update- or delete-heavy workloads: because it is append-only, deletes write 'Tombstone' markers that accumulate on 
+disk and severely degrade read latency if not carefully managed through compaction.
