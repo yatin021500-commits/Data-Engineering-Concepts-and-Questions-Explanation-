@@ -1,0 +1,32 @@
+Relational SQL databases are like rigid, meticulously organized filing cabinets where every document must fit the exact same template.
+NoSQL—which stands for 'Not Only SQL'—is a family of purpose-built storage engines that throw away that rigid table structure in exchange for flexible schemas,
+massive horizontal scalability, and sub-millisecond performance on specific access patterns.
+
+Technical Breakdown :- 
+Instead of forcing all data into normalized rows and columns with expensive JOIN operations, 
+NoSQL databases denormalize data to match how the application actually reads it. 
+They fall into four primary architectural types:
+
+Key-Value Stores (e.g., Redis, DynamoDB): The simplest model—a giant distributed hash map. 
+You look up an opaque value using a unique key in $O(1)$ time. Ideal for caching, session management, and real-time leaderboards.
+
+Document Stores (e.g., MongoDB, Couchbase): Store semi-structured, nested JSON or BSON documents where each record can have a completely different schema.
+Ideal for product catalogs, user profiles, and content management.
+
+Wide-Column Stores (e.g., Apache Cassandra, HBase): Organize data into dynamic columns grouped by a row key, distributed across massive clusters 
+with no single point of failure. Ideal for extreme write-throughput workloads like IoT telemetry, time-series logs, and messaging history.
+
+Graph Databases (e.g., Neo4j, Amazon Neptune): Store entities as Nodes and relationships as Edges, making multi-hop relationship traversals 
+instantaneous instead of requiring brutal recursive SQL joins. Ideal for fraud rings, social networks, and recommendation engines.
+
+Buisness Context :- 
+Modern internet-scale applications—like a global e-commerce catalog where a laptop has 'RAM' and a t-shirt has 'Size'—break down in traditional 
+relational databases due to constant schema migrations and vertical scaling ceilings. NoSQL lets product teams iterate rapidly without database
+downtime while scaling horizontally across cheap commodity servers to serve millions of concurrent users.
+
+Design Decision :- 
+Some engineers often pick NoSQL just to avoid writing SQL schemas, only to realize six months later that they need complex ad-hoc joins 
+and multi-table ACID transactions—at which point they end up painfully rebuilding a relational database inside their application code.
+As a data engineer, I follow Polyglot Persistence: I default to PostgreSQL for core transactional data, and only introduce a NoSQL store when a
+specific access pattern demands it. Crucially, in NoSQL you must design your schema around your queries, not your entities—because if you don't know
+your read patterns upfront, your 'web-scale' NoSQL database will quickly become slower than a single Postgres box.
