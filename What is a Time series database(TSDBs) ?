@@ -1,0 +1,32 @@
+A traditional relational database is like a ledger built to track the current state of the world—what is a customer's balance right now?
+A Time-Series Database (TSDB) is like an airplane's black box: it is purpose-built to ingest, compress, and query millions of timestamped 
+measurements per second to show you how the world is changing over time.
+
+Technical Breakdown :- 
+While you can store timestamps in MySQL or Postgres, they quickly choke under massive telemetry loads because B-Tree indexes
+fragment when ingesting millions of writes per second. TSDBs—like TimescaleDB, InfluxDB, or Prometheus—solve this with four 
+specialized architectural optimizations:
+
+Time-Partitioned Storage (Chunks): Data is automatically partitioned into time-based blocks (e.g., 1-day or 1-hour chunks) so recent writes stay 
+in fast RAM and expired data can be dropped instantly via DROP CHUNK instead of slow row-by-row DELETEs.
+
+Specialized Compression: Because consecutive sensor or metric readings change very little, TSDBs use 
+Delta-of-Delta encoding for timestamps and Gorilla/XOR compression for floats—shrinking storage footprints by 90% or more.
+
+Native Time-Bucket Aggregations: Built-in functions for downsampling, rolling averages, gap-filling, and interpolation without writing brutal SQL
+window functions.
+
+Automated Retention & Downsampling: Policies automatically roll up 1-second raw data into 1-hour averages after 30 days, preserving long-term
+trends while slashing storage costs.
+
+Buisness Context :-
+TSDBs power real-time observability, IoT fleets, and financial markets. Whether you are monitoring CPU spikes across 10,000 Kubernetes pods,
+tracking live GPS telemetry from a fleet of delivery trucks, or analyzing millisecond stock-tick movements, a TSDB lets the business detect
+anomalies and trigger alerts in real time at a fraction of the hardware cost of a general-purpose database.
+
+Design Decision :-
+The single most common production killer some engineers hit with TSDBs is High Cardinality.
+In engines like InfluxDB or Prometheus, every unique combination of metadata tags (like host + region) creates a separate in-memory time series.
+If an engineer puts a user_id or request_id into a tag column, the series count explodes into the millions, instantly causing an Out-Of-Memory (OOM) crash. 
+As a data engineer, I strictly keep low-cardinality dimensions in indexed tags, push high-cardinality identifiers into unindexed fields or a separate OLAP
+store (like ClickHouse), and pair TSDBs with continuous aggregates so executive dashboards query pre-rolled summaries instead of scanning raw millisecond ticks.
