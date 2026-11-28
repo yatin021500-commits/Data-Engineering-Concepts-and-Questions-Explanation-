@@ -1,0 +1,28 @@
+Imagine wiring $1,000 to a friend when your Wi-Fi flickers mid-click. 'At-most-once' risks the money vanishing into thin air; 'at-least-once'
+risks charging you $2,000; Exactly-Once Semantics (EOS) is the distributed systems guarantee that even if networks drop and servers crash mid-flight,
+that $1,000 is processed once—and only once.
+
+Technical Breakdown :- 
+In distributed streaming (like Apache Kafka or Flink), networks are inherently unreliable, so true 'exactly-once delivery' 
+over the wire is mathematically impossible. Instead, EOS achieves effectively-once processing by combining three architectural primitives:
+
+Idempotent Producers: Each producer is assigned a unique Producer ID (PID) and attaches a monotonically increasing sequence number to every message. 
+If a network timeout causes a retry, the broker recognizes the duplicate sequence number and silently discards it.
+
+Atomic Transactions: Using a two-phase commit protocol coordinated by a Transaction Coordinator, a stream processor can read from an input topic,
+write transformed results to an output topic, and commit its consumer offset as a single atomic unit. Either all of it succeeds, or none of it does.
+
+Read-Committed Isolation: Downstream consumers set isolation.level=read_committed, ensuring they never see uncommitted or aborted transactional records.
+
+Buisness Context :- 
+For clickstream analytics or ad impressions, a 0.01% duplicate rate is completely acceptable—you just want maximum speed. 
+But for financial ledgers, payment processing, inventory deduction, or billing pipelines, duplicates are catastrophic. 
+EOS protects the company from double-charging customers, over-selling stock, or failing financial audits, without forcing engineers to build brittle, 
+manual reconciliation jobs every night.
+
+Design Decision :- 
+The biggest trap some engineers fall into is turning on Kafka's enable.idempotence and transactions and assuming their entire pipeline is now 'Exactly-Once.'
+In reality, Kafka's native EOS only applies to Kafka-to-Kafka workflows (read from Kafka, write back to Kafka). 
+The moment your consumer writes to an external sink—like PostgreSQL, Snowflake, or S3—Kafka's transaction boundary ends. 
+As a data engineer, I achieve true end-to-end EOS by pairing at-least-once delivery from Kafka with idempotent sinks: either using deterministic 
+primary keys with MERGE/UPSERT statements in the database, or storing the Kafka offset inside the exact same ACID database transaction as the business data.
