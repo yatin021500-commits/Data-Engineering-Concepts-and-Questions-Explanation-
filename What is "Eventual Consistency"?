@@ -1,0 +1,27 @@
+Strong consistency is like pausing an entire company meeting until every single person in three different time zones writes down the exact same number.
+Eventual Consistency is telling the person next to you and letting the update ripple across the room—nobody has to stop working, and within a fraction
+of a second, everyone naturally converges on the exact same truth.
+
+Technical Breakdown :- 
+Eventual Consistency is a consistency model used in distributed systems (like Apache Cassandra, Amazon DynamoDB, and global DNS) to 
+guarantee high availability and low latency.
+
+Instead of locking all replicas during a write and waiting for every node across the globe to confirm, the system accepts the write on one local node 
+and immediately returns a 200 OK to the user. In the background, that update is asynchronously replicated to the other nodes.
+
+The formal guarantee is simple: if no new updates are made to a given record, all replicas will eventually converge to the exact same 
+value—typically within milliseconds. During that brief replication window, a user reading from a lagging replica might see slightly stale data.
+Under the hood, systems enforce convergence using background mechanisms like Read Repair, Hinted Handoff, and Anti-Entropy (Merkle Trees).
+
+Buisness Context :- 
+For global, high-traffic applications, waiting for synchronous cross-continent agreement destroys user experience and revenue. 
+If a shopper in Bengaluru adds an item to their cart, or a user likes a post, they do not care if a replica in Virginia sees 1,004 likes 
+instead of 1,005 for 150 milliseconds—they do care if the button freezes for two seconds or fails during a network hiccup. Eventual consistency keeps
+the storefront open and blazingly fast 24/7.
+
+Design Decision :- 
+Some engineers either fear eventual consistency—assuming it means permanent data corruption—or blindly use it for financial ledgers, 
+causing catastrophic double-spending. As a data engineer, I match the consistency model to the business invariant: I use strong consistency 
+for money and inventory counts, and eventual consistency for feeds, catalogs, and telemetry. Even better, when using eventually consistent stores,
+I prevent jarring UX bugs by implementing Read-Your-Own-Writes (sticky sessions or version tokens) so a user never updates their profile and sees 
+their old bio on refresh, and I leverage Quorum tuning (R + W > N) when a specific critical query demands strong consistency on top of an AP database.
